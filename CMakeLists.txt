@@ -27,7 +27,7 @@ add_executable(pawse WIN32
 )
 
 target_include_directories(pawse PRIVATE
-    src
+    include
     resources
     ${CMAKE_CURRENT_BINARY_DIR}/generated
 )
