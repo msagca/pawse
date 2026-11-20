@@ -26,10 +26,34 @@ jobs:
         run: cmake --preset release
       - name: Build
         run: cmake --build --preset release
+      - name: Read version
+        id: version
+        shell: pwsh
+        run: |
+          $version = (Select-String -Path build/release/CMakeCache.txt -Pattern '^CMAKE_PROJECT_VERSION:STATIC=(.+)$').Matches[0].Groups[1].Value
+          if ($env:GITHUB_REF_TYPE -eq 'tag' -and $env:GITHUB_REF_NAME -ne "v$version") {
+            Write-Error "Tag $env:GITHUB_REF_NAME doesn't match the project version $version in CMakeLists.txt."
+            exit 1
+          }
+          "version=$version" >> $env:GITHUB_OUTPUT
+      - name: Install Inno Setup
+        run: choco install innosetup -y --no-progress
+      - name: Build installer
+        shell: pwsh
+        run: |
+          $iscc = Get-ChildItem "${env:ProgramFiles(x86)}\Inno Setup *\ISCC.exe" | Select-Object -Last 1
+          if (-not $iscc) { Write-Error "ISCC.exe not found."; exit 1 }
+          & $iscc.FullName "/DAppVersion=${{ steps.version.outputs.version }}" installer/pawse.iss
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+      - name: Collect files
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force dist | Out-Null
+          Copy-Item build/release/pawse.exe, build/installer/*.exe dist/
       - uses: actions/upload-artifact@v7
         with:
           name: pawse
-          path: build/release/pawse.exe
+          path: dist/
           if-no-files-found: error
 
   release:
@@ -45,4 +69,4 @@ jobs:
       - name: Publish release
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh release create "$GITHUB_REF_NAME" pawse.exe --repo "$GITHUB_REPOSITORY" --title "Pawse $GITHUB_REF_NAME" --generate-notes
+        run: gh release create "$GITHUB_REF_NAME" *.exe --repo "$GITHUB_REPOSITORY" --title "Pawse $GITHUB_REF_NAME" --generate-notes
