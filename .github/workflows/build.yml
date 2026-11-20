@@ -13,15 +13,20 @@ jobs:
   build:
     runs-on: windows-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: ilammy/msvc-dev-cmd@v1
-        with:
-          arch: x64
+      - uses: actions/checkout@v7
+      - name: Set up MSVC
+        shell: pwsh
+        run: |
+          $vswhere = "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe"
+          $vs = & $vswhere -latest -products * -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath
+          cmd /c "`"$vs\VC\Auxiliary\Build\vcvars64.bat`" >nul && set" |
+            Where-Object { $_ -match '^[^=]+=' } |
+            Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
       - name: Configure
         run: cmake --preset release
       - name: Build
         run: cmake --build --preset release
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: pawse
           path: build/release/pawse.exe
@@ -34,7 +39,7 @@ jobs:
     permissions:
       contents: write
     steps:
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           name: pawse
       - name: Publish release
