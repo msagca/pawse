@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.25)
 
-project(Pawse VERSION 0.2.0 DESCRIPTION "Keyboard and mouse lock for Windows" LANGUAGES CXX RC)
+project(Pawse VERSION 0.3.0 DESCRIPTION "Keyboard and mouse lock for Windows" LANGUAGES CXX RC)
 
 if(NOT MSVC)
     message(FATAL_ERROR "Pawse builds with MSVC (Visual Studio 2022 or later).")
