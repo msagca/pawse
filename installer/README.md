@@ -31,13 +31,16 @@ The `release` job in `.github/workflows/build.yml` signs every installer with an
 To check a release by hand, put the installer and its `.sig` in one folder and create the signed line (Git Bash or Linux):
 
 ```sh
-printf '%s  %s\n' "$(sha256sum < pawse-0.3.0-x64-setup.exe | cut -d' ' -f1)" pawse-0.3.0-x64-setup.exe > signed-line.txt
+printf '%s  %s\n' \
+  "$(sha256sum < pawse-0.3.0-x64-setup.exe | cut -d' ' -f1)" \
+  pawse-0.3.0-x64-setup.exe > signed-line.txt
 ```
 
 Then verify it against the public key:
 
 ```sh
-openssl dgst -sha256 -verify release-signing-key.pub.pem -signature pawse-0.3.0-x64-setup.exe.sig signed-line.txt
+openssl dgst -sha256 -verify release-signing-key.pub.pem \
+  -signature pawse-0.3.0-x64-setup.exe.sig signed-line.txt
 ```
 
 ### Replacing the key
@@ -66,7 +69,8 @@ openssl ec -in release-signing-key.pem -pubout -out installer/release-signing-ke
 Print the 64 bytes (X and Y) that go into `kReleaseSigningKey`:
 
 ```sh
-openssl ec -pubin -in installer/release-signing-key.pub.pem -outform DER | tail -c 64 | od -An -tx1
+openssl ec -pubin -in installer/release-signing-key.pub.pem -outform DER |
+  tail -c 64 | od -An -tx1
 ```
 
 Store the private key as the Actions secret:
