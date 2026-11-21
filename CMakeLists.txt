@@ -22,6 +22,7 @@ add_executable(pawse WIN32
     src/main.cpp
     src/settings.cpp
     src/settings_dialog.cpp
+    src/updater.cpp
     resources/pawse.rc
     resources/pawse.manifest
 )
@@ -48,4 +49,4 @@ target_compile_options(pawse PRIVATE
 # The static runtime makes pawse.exe a single file with nothing else to install.
 set_property(TARGET pawse PROPERTY MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
 
-target_link_libraries(pawse PRIVATE comctl32 shcore windowsapp)
+target_link_libraries(pawse PRIVATE bcrypt comctl32 shcore windowsapp winhttp)

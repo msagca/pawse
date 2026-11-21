@@ -31,6 +31,9 @@ constexpr UINT kMessageHelloResult = WM_APP + 3;        // wParam: HelloResult, 
 constexpr UINT kMessageHelloAvailability = WM_APP + 4;  // wParam: 1 if Windows Hello is set up
 constexpr UINT kMessageTrayIcon = WM_APP + 5;           // Shell_NotifyIcon callback
 constexpr UINT kMessageInputBlocked = WM_APP + 6;       // a locked device was used
+constexpr UINT kMessageUpdateChecked = WM_APP + 7;  // wParam: packed latest Version, 0 on failure
+// wParam: UpdateDownloadResult, lParam: std::wstring* installer path when verified (receiver frees)
+constexpr UINT kMessageUpdateDownloaded = WM_APP + 8;
 
 // Marks keyboard input that Pawse injects itself, so its own hooks let it through.
 constexpr ULONG_PTR kPawseInputTag = 0x50415753;  // "PAWS"

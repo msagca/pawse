@@ -15,6 +15,7 @@ constexpr wchar_t kRunValueName[] = L"Pawse";
 constexpr wchar_t kBindingsSection[] = L"Bindings";
 constexpr wchar_t kUnlockSection[] = L"Unlock";
 constexpr wchar_t kMessageSection[] = L"Message";
+constexpr wchar_t kUpdatesSection[] = L"Updates";
 constexpr const wchar_t* kBindingKeys[kBindingCount] = {L"Keyboard", L"Mouse", L"KeyboardAndMouse"};
 
 std::wstring GetSettingsPath(bool create_directory) {
@@ -84,6 +85,7 @@ Settings LoadSettings() {
     settings.message_seconds =
         std::clamp(ReadNumber(path, kMessageSection, L"Seconds", kDefaultMessageSeconds),
                    kMinMessageSeconds, kMaxMessageSeconds);
+    settings.check_for_updates = ReadNumber(path, kUpdatesSection, L"Check", 1) != 0;
     return settings;
 }
 
@@ -104,6 +106,7 @@ bool SaveSettings(const Settings& settings) {
     saved &= WriteString(path, kMessageSection, L"Show", settings.show_message ? L"1" : L"0");
     saved &=
         WriteString(path, kMessageSection, L"Seconds", std::to_wstring(settings.message_seconds));
+    saved &= WriteString(path, kUpdatesSection, L"Check", settings.check_for_updates ? L"1" : L"0");
     return saved;
 }
 

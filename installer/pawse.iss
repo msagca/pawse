@@ -59,8 +59,16 @@ Root: HKCU; Subkey: "{#RunKey}"; ValueType: string; ValueName: "Pawse"; ValueDat
 
 [Run]
 Filename: "{app}\pawse.exe"; Description: "{cm:LaunchProgram,Pawse}"; Flags: nowait postinstall skipifsilent
+; Pawse runs this installer silently to update itself, then exits. Start the new version.
+Filename: "{app}\pawse.exe"; Parameters: "--updated"; Flags: nowait; Check: IsPawseUpdate
 
 [Code]
+// Pawse passes /PAWSEUPDATE=yes when it runs this installer to update itself.
+function IsPawseUpdate: Boolean;
+begin
+  Result := ExpandConstant('{param:PAWSEUPDATE|no}') = 'yes';
+end;
+
 // The autostart entry can also be turned on later from Pawse's Settings, so remove it on
 // uninstall whenever it points at this installation, not only when the task was selected.
 procedure CurUninstallStepChanged(CurUninstallStep: TUninstallStep);

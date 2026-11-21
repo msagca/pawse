@@ -2,21 +2,24 @@
 
 #include <windows.h>
 
+#include <memory>
 #include <string>
 
 #include "banner.h"
 #include "hello_verifier.h"
 #include "input_blocker.h"
 #include "settings.h"
+#include "updater.h"
 
 namespace pawse {
 
 enum class HelloAvailability { kUnknown, kAvailable, kUnavailable };
+enum class StartReason { kUser, kSignIn, kUpdated };
 
 // The tray app: owns the hidden main window, the tray icon and the lock state.
 class App {
 public:
-    int Run(HINSTANCE instance, bool started_at_sign_in);
+    int Run(HINSTANCE instance, StartReason reason);
 
     // Used by the settings dialog.
     const Settings& GetSettings() const { return settings_; }
@@ -58,9 +61,18 @@ private:
     void HideLockedMessage();
     bool BringMainWindowToFront();
 
+    bool HasUpdate() const { return available_update_ > GetCurrentVersion(); }
+    void ScheduleUpdateCheck(UINT delay_milliseconds);
+    void OnUpdateCheckTimer();
+    void OnUpdateChecked(Version latest);
+    void StartUpdate();
+    void OnUpdateDownloaded(UpdateDownloadResult result, std::unique_ptr<std::wstring> installer);
+    void InstallUpdate();
+
     HINSTANCE instance_ = nullptr;
     HWND window_ = nullptr;
     HWND settings_dialog_ = nullptr;
+    HANDLE single_instance_mutex_ = nullptr;
     HICON icon_unlocked_ = nullptr;
     HICON icon_locked_ = nullptr;
     UINT taskbar_created_message_ = 0;
@@ -76,6 +88,14 @@ private:
     // Devices waiting for Windows Hello before they unlock. The keyboard is let through while
     // the prompt is open so the user can type their PIN.
     unsigned pending_unlock_devices_ = kLockNone;
+
+    // The newest release found, and the newest one the user has been told about.
+    Version available_update_;
+    Version notified_update_;
+    bool checking_for_update_ = false;
+    bool downloading_update_ = false;
+    // The verified installer for available_update_, once downloaded.
+    std::wstring downloaded_installer_;
 };
 
 }  // namespace pawse

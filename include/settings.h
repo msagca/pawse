@@ -24,6 +24,8 @@ struct Settings {
     // Whether a message shows when someone uses a locked device, and for how long.
     bool show_message = true;
     UINT message_seconds = kDefaultMessageSeconds;
+    // Looks for a new release now and then. Installing always waits for the user.
+    bool check_for_updates = true;
 };
 
 // Settings live in %APPDATA%\Pawse\settings.ini. Missing or invalid values fall back to defaults.

@@ -19,6 +19,10 @@ constexpr UINT kTrayIconId = 1;
 constexpr UINT_PTR kTimerAutoUnlock = 1;
 constexpr UINT_PTR kTimerHelloTimeout = 2;
 constexpr UINT_PTR kTimerHideMessage = 3;
+constexpr UINT_PTR kTimerUpdateCheck = 4;
+// The first check waits a little, so the network is up after signing in.
+constexpr UINT kFirstUpdateCheckDelayMilliseconds = 15 * 1000;
+constexpr UINT kUpdateCheckIntervalMilliseconds = 24 * 60 * 60 * 1000;
 // The Windows Hello prompt lets the keyboard through, so it must not stay open forever.
 constexpr UINT kHelloTimeoutMilliseconds = 60 * 1000;
 
@@ -26,6 +30,7 @@ enum MenuCommand : UINT {
     kCommandLockKeyboard = 40001,
     kCommandLockMouse,
     kCommandLockBoth,
+    kCommandUpdate,
     kCommandSettings,
     kCommandExit,
 };
@@ -74,22 +79,23 @@ void CopyText(wchar_t (&destination)[Capacity], const std::wstring& text) {
 
 }  // namespace
 
-int App::Run(HINSTANCE instance, bool started_at_sign_in) {
+int App::Run(HINSTANCE instance, StartReason reason) {
     instance_ = instance;
     show_settings_message_ = RegisterWindowMessageW(L"Pawse.ShowSettings");
 
-    const HANDLE single_instance_mutex = CreateMutexW(nullptr, FALSE, kSingleInstanceMutexName);
+    single_instance_mutex_ = CreateMutexW(nullptr, FALSE, kSingleInstanceMutexName);
     if (GetLastError() == ERROR_ALREADY_EXISTS) {
         // Starting Pawse again opens the settings of the copy that is already running.
         if (const HWND running_window = FindWindowW(kMainWindowClassName, nullptr)) {
             AllowSetForegroundWindow(ASFW_ANY);
             PostMessageW(running_window, show_settings_message_, 0, 0);
         }
-        if (single_instance_mutex != nullptr) {
-            CloseHandle(single_instance_mutex);
+        if (single_instance_mutex_ != nullptr) {
+            CloseHandle(single_instance_mutex_);
         }
         return 0;
     }
+    DeleteDownloadedUpdates();
 
     INITCOMMONCONTROLSEX common_controls = {
         sizeof(common_controls), ICC_HOTKEY_CLASS | ICC_UPDOWN_CLASS | ICC_STANDARD_CLASSES};
@@ -114,11 +120,18 @@ int App::Run(HINSTANCE instance, bool started_at_sign_in) {
             L"Some key bindings are taken",
             refused_bindings + L" is used by another app. Choose a different binding in Settings.",
             true);
-    } else if (!started_at_sign_in) {
+    } else if (reason == StartReason::kUpdated) {
+        ShowNotification(L"Pawse updated",
+                         L"Pawse is now version " + FormatVersion(GetCurrentVersion()) + L".",
+                         false);
+    } else if (reason == StartReason::kUser) {
         ShowNotification(L"Pawse is running",
                          L"Press " + FormatKeyBinding(settings_.bindings[kBindingBoth]) +
                              L" to lock the keyboard and mouse. Click the paw icon for more.",
                          false);
+    }
+    if (settings_.check_for_updates) {
+        ScheduleUpdateCheck(kFirstUpdateCheckDelayMilliseconds);
     }
 
     MSG message;
@@ -130,8 +143,8 @@ int App::Run(HINSTANCE instance, bool started_at_sign_in) {
     input_blocker_.Stop();
     DestroyIcon(icon_unlocked_);
     DestroyIcon(icon_locked_);
-    if (single_instance_mutex != nullptr) {
-        CloseHandle(single_instance_mutex);
+    if (single_instance_mutex_ != nullptr) {
+        CloseHandle(single_instance_mutex_);
     }
     return static_cast<int>(message.wParam);
 }
@@ -157,6 +170,11 @@ std::wstring App::ApplySettings(const Settings& settings, bool start_with_window
     if (!SetStartWithWindows(start_with_windows)) {
         ShowNotification(L"Start with Windows not changed",
                          L"Pawse couldn't change whether it starts when you sign in.", true);
+    }
+    if (settings_.check_for_updates && !previous_settings.check_for_updates) {
+        ScheduleUpdateCheck(kFirstUpdateCheckDelayMilliseconds);
+    } else if (!settings_.check_for_updates) {
+        KillTimer(window_, kTimerUpdateCheck);
     }
     ApplyLockState();
     return {};
@@ -214,6 +232,14 @@ LRESULT App::HandleMessage(UINT message, WPARAM wparam, LPARAM lparam) {
         case kMessageInputBlocked:
             OnInputBlocked();
             return 0;
+        case kMessageUpdateChecked:
+            OnUpdateChecked(UnpackVersion(wparam));
+            return 0;
+        case kMessageUpdateDownloaded:
+            OnUpdateDownloaded(
+                static_cast<UpdateDownloadResult>(wparam),
+                std::unique_ptr<std::wstring>(reinterpret_cast<std::wstring*>(lparam)));
+            return 0;
         case kMessageHookFailed:
             OnHooksFailed(static_cast<unsigned>(wparam));
             return 0;
@@ -237,6 +263,8 @@ LRESULT App::HandleMessage(UINT message, WPARAM wparam, LPARAM lparam) {
                 FinishUnlockAttempt(HelloResult::kCanceled);
             } else if (wparam == kTimerHideMessage) {
                 HideLockedMessage();
+            } else if (wparam == kTimerUpdateCheck) {
+                OnUpdateCheckTimer();
             }
             return 0;
         case WM_SYSKEYDOWN:
@@ -338,6 +366,13 @@ void App::ShowTrayMenu(POINT anchor) {
     }
     const UINT locked_flag = locked_devices_ != kLockNone ? MF_GRAYED : 0;
     AppendMenuW(menu, MF_SEPARATOR, 0, nullptr);
+    if (HasUpdate()) {
+        const std::wstring version = FormatVersion(available_update_);
+        const std::wstring label = downloading_update_ ? L"Downloading Pawse " + version + L"…"
+                                                       : L"Update to Pawse " + version + L"…";
+        const UINT update_flag = downloading_update_ || dialog_open ? MF_GRAYED : locked_flag;
+        AppendMenuW(menu, MF_STRING | update_flag, kCommandUpdate, label.c_str());
+    }
     AppendMenuW(menu, MF_STRING | locked_flag, kCommandSettings, L"Settings…");
     AppendMenuW(menu, MF_SEPARATOR, 0, nullptr);
     AppendMenuW(menu, MF_STRING | locked_flag, kCommandExit, L"Exit Pawse");
@@ -362,7 +397,9 @@ void App::HandleCommand(UINT command) {
             return;
         }
     }
-    if (command == kCommandSettings) {
+    if (command == kCommandUpdate) {
+        StartUpdate();
+    } else if (command == kCommandSettings) {
         OpenSettings();
     } else if (command == kCommandExit && locked_devices_ == kLockNone) {
         DestroyWindow(window_);
@@ -575,6 +612,102 @@ void App::ShowLockedMessage() {
 void App::HideLockedMessage() {
     KillTimer(window_, kTimerHideMessage);
     banner_.Hide();
+}
+
+void App::ScheduleUpdateCheck(UINT delay_milliseconds) {
+    SetTimer(window_, kTimerUpdateCheck, delay_milliseconds, nullptr);
+}
+
+void App::OnUpdateCheckTimer() {
+    ScheduleUpdateCheck(kUpdateCheckIntervalMilliseconds);
+    if (!settings_.check_for_updates || checking_for_update_ || downloading_update_) {
+        return;
+    }
+    checking_for_update_ = true;
+    StartUpdateCheck(window_);
+}
+
+void App::OnUpdateChecked(Version latest) {
+    checking_for_update_ = false;
+    if (latest <= GetCurrentVersion() || latest <= available_update_) {
+        return;  // the check failed, or there is nothing newer
+    }
+    available_update_ = latest;
+    downloaded_installer_.clear();
+    if (latest > notified_update_) {
+        notified_update_ = latest;
+        const std::wstring version = FormatVersion(latest);
+        ShowNotification(
+            L"Pawse " + version + L" is available",
+            L"Choose \"Update to Pawse " + version + L"\" in the tray menu to install it.", false);
+    }
+}
+
+void App::StartUpdate() {
+    if (!HasUpdate() || downloading_update_ || locked_devices_ != kLockNone ||
+        settings_dialog_ != nullptr) {
+        return;
+    }
+    if (!downloaded_installer_.empty()) {
+        InstallUpdate();
+        return;
+    }
+    downloading_update_ = true;
+    StartUpdateDownload(window_, available_update_);
+}
+
+void App::OnUpdateDownloaded(UpdateDownloadResult result, std::unique_ptr<std::wstring> installer) {
+    downloading_update_ = false;
+    const std::wstring version = FormatVersion(available_update_);
+    switch (result) {
+        case UpdateDownloadResult::kVerified:
+            break;
+        case UpdateDownloadResult::kDownloadFailed:
+            ShowNotification(L"Update failed",
+                             L"Pawse couldn't download version " + version +
+                                 L". Check your internet connection and try again.",
+                             true);
+            return;
+        case UpdateDownloadResult::kSignatureInvalid:
+            ShowNotification(L"Update not installed",
+                             L"The download of Pawse " + version +
+                                 L" failed the signature check, so Pawse didn't install it.",
+                             true);
+            return;
+        case UpdateDownloadResult::kSaveFailed:
+            ShowNotification(L"Update failed",
+                             L"Pawse couldn't save the download of version " + version + L".",
+                             true);
+            return;
+    }
+    if (!installer) {
+        return;
+    }
+    downloaded_installer_ = *installer;
+    if (locked_devices_ != kLockNone || settings_dialog_ != nullptr) {
+        // Something was locked while downloading. Installing restarts Pawse, so wait.
+        ShowNotification(
+            L"Pawse " + version + L" is ready to install",
+            L"Choose \"Update to Pawse " + version + L"\" in the tray menu again when you're done.",
+            false);
+        return;
+    }
+    InstallUpdate();
+}
+
+void App::InstallUpdate() {
+    // Setup won't run while Pawse holds its mutex (AppMutex in installer/pawse.iss).
+    if (single_instance_mutex_ != nullptr) {
+        CloseHandle(single_instance_mutex_);
+        single_instance_mutex_ = nullptr;
+    }
+    if (!StartInstaller(downloaded_installer_)) {
+        single_instance_mutex_ = CreateMutexW(nullptr, FALSE, kSingleInstanceMutexName);
+        downloaded_installer_.clear();
+        ShowNotification(L"Update failed", L"Pawse couldn't start the installer.", true);
+        return;
+    }
+    DestroyWindow(window_);  // setup starts the new version when it's done
 }
 
 bool App::BringMainWindowToFront() {

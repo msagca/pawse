@@ -32,6 +32,8 @@ void ShowSettingsInControls(HWND dialog, const Settings& settings, bool start_wi
     SetDlgItemInt(dialog, IDC_AUTO_UNLOCK, settings.auto_unlock_minutes, FALSE);
     CheckDlgButton(dialog, IDC_SHOW_MESSAGE, settings.show_message ? BST_CHECKED : BST_UNCHECKED);
     SetDlgItemInt(dialog, IDC_MESSAGE_SECONDS, settings.message_seconds, FALSE);
+    CheckDlgButton(dialog, IDC_CHECK_FOR_UPDATES,
+                   settings.check_for_updates ? BST_CHECKED : BST_UNCHECKED);
     UpdateMessageControls(dialog);
     CheckDlgButton(dialog, IDC_START_WITH_WINDOWS,
                    start_with_windows ? BST_CHECKED : BST_UNCHECKED);
@@ -53,6 +55,7 @@ Settings ReadSettingsFromControls(HWND dialog) {
     settings.message_seconds = is_number
                                    ? std::clamp(seconds, kMinMessageSeconds, kMaxMessageSeconds)
                                    : kDefaultMessageSeconds;
+    settings.check_for_updates = IsDlgButtonChecked(dialog, IDC_CHECK_FOR_UPDATES) == BST_CHECKED;
     return settings;
 }
 
