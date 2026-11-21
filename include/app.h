@@ -81,8 +81,8 @@ private:
     HWND window_ = nullptr;
     HWND settings_dialog_ = nullptr;
     HANDLE single_instance_mutex_ = nullptr;
-    HICON icon_unlocked_ = nullptr;
-    HICON icon_locked_ = nullptr;
+    // The tray icon for each lock state, indexed by LockedDevices.
+    HICON tray_icons_[kLockStateCount] = {};
     UINT taskbar_created_message_ = 0;
     UINT show_settings_message_ = 0;
     NotificationAction notification_action_ = NotificationAction::kNone;

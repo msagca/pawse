@@ -16,7 +16,8 @@ public:
     ~Banner();
 
     bool Create(HINSTANCE instance);
-    void Show(const std::wstring& title, const std::wstring& detail);
+    // The accent color marks the stripe on the left edge.
+    void Show(const std::wstring& title, const std::wstring& detail, COLORREF accent_color);
     void Hide();
     bool IsVisible() const { return window_ != nullptr && IsWindowVisible(window_); }
 
@@ -32,6 +33,7 @@ private:
     UINT font_dpi_ = 0;
     std::wstring title_;
     std::wstring detail_;
+    COLORREF accent_color_ = 0;
 };
 
 }  // namespace pawse

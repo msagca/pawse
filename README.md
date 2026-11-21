@@ -20,7 +20,7 @@ Download `pawse-<version>-x64-setup.exe` from [Releases](https://github.com/msag
 
 ## Usage
 
-A paw appears in the notification area (tray). It turns red while something is locked.
+A paw appears in the notification area (tray). Its color shows what is locked: blue for nothing, orange for the keyboard, yellow for the mouse and red for both.
 
 | Default binding | Action |
 | --- | --- |

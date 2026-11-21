@@ -16,10 +16,15 @@ CANVAS_SIZE = 1024
 ICON_SIZES = [16, 20, 24, 32, 40, 48, 64, 128, 256]
 RESOURCES_DIRECTORY = Path(__file__).resolve().parent.parent / "resources"
 
-PAW_COLOR = (242, 140, 40, 255)
-LOCKED_PAW_COLOR = (229, 72, 77, 255)
-BADGE_RING_COLOR = (255, 255, 255, 255)
-BADGE_FILL_COLOR = (40, 40, 46, 255)
+APP_ICON_COLOR = (242, 140, 40, 255)
+
+# One tray icon per lock state. The colors match kLockStateColors in include/common.h.
+TRAY_ICONS = {
+    "tray-unlocked.ico": (74, 158, 255, 255),
+    "tray-keyboard-locked.ico": (242, 140, 40, 255),
+    "tray-mouse-locked.ico": (245, 197, 66, 255),
+    "tray-both-locked.ico": (229, 72, 77, 255),
+}
 
 
 def draw_rotated_ellipse(canvas, center, size, angle_degrees, color):
@@ -51,19 +56,6 @@ def draw_paw(color):
     return canvas
 
 
-def draw_lock_badge(canvas):
-    """Adds a small padlock badge to the bottom-right corner of the canvas."""
-    drawing = ImageDraw.Draw(canvas)
-    badge_box = (560, 560, 1020, 1020)
-    drawing.ellipse(badge_box, fill=BADGE_RING_COLOR)
-    drawing.ellipse((600, 600, 980, 980), fill=BADGE_FILL_COLOR)
-    drawing.rounded_rectangle((680, 770, 900, 920), radius=24, fill=BADGE_RING_COLOR)
-    drawing.arc((715, 660, 865, 830), start=180, end=360, fill=BADGE_RING_COLOR, width=34)
-    drawing.line((732, 745, 732, 780), fill=BADGE_RING_COLOR, width=34)
-    drawing.line((848, 745, 848, 780), fill=BADGE_RING_COLOR, width=34)
-    return canvas
-
-
 def save_icon(canvas, file_name):
     """Saves the canvas as an .ico file that holds every size in ICON_SIZES."""
     output_path = RESOURCES_DIRECTORY / file_name
@@ -72,11 +64,12 @@ def save_icon(canvas, file_name):
 
 
 def main():
-    """Writes the normal and the locked tray icons."""
+    """Writes the app icon, its preview image and one tray icon per lock state."""
     RESOURCES_DIRECTORY.mkdir(parents=True, exist_ok=True)
-    save_icon(draw_paw(PAW_COLOR), "pawse.ico")
-    save_icon(draw_lock_badge(draw_paw(LOCKED_PAW_COLOR)), "pawse-locked.ico")
-    draw_paw(PAW_COLOR).resize((256, 256), Image.LANCZOS).save(
+    save_icon(draw_paw(APP_ICON_COLOR), "pawse.ico")
+    for file_name, color in TRAY_ICONS.items():
+        save_icon(draw_paw(color), file_name)
+    draw_paw(APP_ICON_COLOR).resize((256, 256), Image.LANCZOS).save(
         RESOURCES_DIRECTORY / "pawse.png"
     )
 

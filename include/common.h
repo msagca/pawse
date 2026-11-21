@@ -24,6 +24,16 @@ enum BindingIndex : size_t {
 
 constexpr unsigned kBindingDevices[kBindingCount] = {kLockKeyboard, kLockMouse, kLockBoth};
 
+// The tray icon and message color for each lock state, indexed by LockedDevices. They match the
+// tray icons drawn by tools/make_icons.py.
+constexpr size_t kLockStateCount = kLockBoth + 1;
+constexpr COLORREF kLockStateColors[kLockStateCount] = {
+    RGB(74, 158, 255),  // nothing locked: blue
+    RGB(242, 140, 40),  // keyboard: orange
+    RGB(245, 197, 66),  // mouse: yellow
+    RGB(229, 72, 77),   // both: red
+};
+
 // Messages posted to the main window. Each comment says what wParam and lParam hold.
 constexpr UINT kMessageBindingPressed = WM_APP + 1;     // wParam: BindingIndex
 constexpr UINT kMessageHookFailed = WM_APP + 2;         // wParam: devices no longer blocked
