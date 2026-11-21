@@ -1,5 +1,5 @@
 ; Inno Setup script for Pawse. Build the release preset first, then compile this script:
-;   iscc /DAppVersion=0.4.0 installer\pawse.iss
+;   iscc /DAppVersion=0.4.1 installer\pawse.iss
 ; CI passes the version from CMakeLists.txt, so the installer and pawse.exe always agree.
 
 #ifndef AppVersion
