@@ -1,6 +1,6 @@
 #pragma once
-#include <string>
 #include <windows.h>
+#include <string>
 namespace pawse {
 // A translucent, click-through message in the middle of the screen that says what is locked and
 // how to unlock it. It never takes focus.

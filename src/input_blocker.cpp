@@ -1,5 +1,5 @@
-#include <future>
 #include <input_blocker.hpp>
+#include <future>
 #include <memory>
 namespace pawse {
 namespace {

@@ -1,12 +1,12 @@
 #pragma once
+#include <windows.h>
+#include <memory>
+#include <string>
 #include <banner.hpp>
 #include <hello_verifier.hpp>
 #include <input_blocker.hpp>
-#include <memory>
 #include <settings.hpp>
-#include <string>
 #include <updater.hpp>
-#include <windows.h>
 namespace pawse {
 enum class HelloAvailability { kUnknown,
   kAvailable,

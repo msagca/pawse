@@ -1,6 +1,6 @@
+#include <hello_verifier.hpp>
 #include <UserConsentVerifierInterop.h>
 #include <common.hpp>
-#include <hello_verifier.hpp>
 namespace pawse {
 namespace {
   using winrt::Windows::Foundation::AsyncStatus;

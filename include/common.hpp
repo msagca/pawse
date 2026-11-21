@@ -1,6 +1,6 @@
 #pragma once
-#include <cstddef>
 #include <windows.h>
+#include <cstddef>
 namespace pawse {
 // Devices Pawse can block. Values combine as bit flags.
 enum LockedDevices : unsigned {

@@ -1,10 +1,10 @@
-#include <algorithm>
-#include <app.hpp>
-#include <commctrl.h>
-#include <resource.hpp>
 #include <settings_dialog.hpp>
+#include <commctrl.h>
 #include <shellapi.h>
+#include <algorithm>
 #include <string>
+#include <app.hpp>
+#include <resource.hpp>
 namespace pawse {
 namespace {
   constexpr int kBindingControlIds[kBindingCount] = {IDC_BINDING_KEYBOARD, IDC_BINDING_MOUSE, IDC_BINDING_BOTH};

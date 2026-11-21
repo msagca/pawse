@@ -1,6 +1,6 @@
 #pragma once
-#include <string>
 #include <windows.h>
+#include <string>
 #include <winrt/Windows.Foundation.h>
 #include <winrt/Windows.Security.Credentials.UI.h>
 namespace pawse {

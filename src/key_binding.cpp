@@ -1,6 +1,6 @@
+#include <key_binding.hpp>
 #include <commctrl.h>
 #include <cwchar>
-#include <key_binding.hpp>
 namespace pawse {
 namespace {
   constexpr UINT kKnownModifiers = MOD_ALT | MOD_CONTROL | MOD_SHIFT | MOD_WIN;

@@ -4,22 +4,16 @@
 
 Requirements:
 
-- Visual Studio 2022 or later with the **Desktop development with C++** workload. This includes MSVC, the Windows SDK, CMake and Ninja.
+- Visual Studio 2022 or later with the **Desktop development with C++** workload. This includes MSVC, the Windows SDK and CMake.
 - Windows 10 SDK 10.0.22000 or later, for `UserConsentVerifierInterop.h`.
 
-From a **Developer PowerShell for VS** in the repository root, configure:
+From a **Developer PowerShell for VS** in the repository root, configure and build:
 
 ```powershell
-cmake --preset release
+cmake --workflow Release
 ```
 
-Then build:
-
-```powershell
-cmake --build --preset release
-```
-
-The app is written to `build/release/pawse.exe`. Use the `debug` preset for a debug build. You can also open the folder in Visual Studio or VS Code (CMake Tools), which pick up `CMakePresets.json`.
+The app is written to `build/Release/pawse.exe`. Use the `Debug` preset for a debug build. You can also open the folder in Visual Studio or VS Code (CMake Tools), which pick up `CMakePresets.json`.
 
 To build the installer, see [installer/README.md](../installer/README.md).
 
@@ -36,4 +30,4 @@ python tools/make_icons.py
 - **No stuck keys:** keys and buttons held down when a lock starts are allowed to be released.
 - **Windows Hello:** the prompt comes from `UserConsentVerifier` through `IUserConsentVerifierInterop`, which attaches it to a desktop window.
 - **Updates:** WinHTTP finds the latest release through GitHub's `releases/latest` redirect and downloads the installer. BCrypt checks its ECDSA signature against the public key built into `updater.cpp`. See [installer/README.md](../installer/README.md#release-signing).
-- **Code layout:** C++20, plain Win32 and C++/WinRT, built with CMake and Ninja on MSVC. Headers are in `include/`, sources in `src/`.
+- **Code layout:** C++20, plain Win32 and C++/WinRT, built with CMake and MSVC. Headers are in `include/`, sources in `src/`.

@@ -1,11 +1,11 @@
 #include <app.hpp>
 #include <commctrl.h>
+#include <shellapi.h>
+#include <windowsx.h>
 #include <cwctype>
+#include <utility>
 #include <resource.hpp>
 #include <settings_dialog.hpp>
-#include <shellapi.h>
-#include <utility>
-#include <windowsx.h>
 namespace pawse {
 namespace {
   constexpr wchar_t kMainWindowClassName[] = L"Pawse.MainWindow";

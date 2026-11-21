@@ -1,4 +1,4 @@
-; Inno Setup script for Pawse. Build the release preset first, then compile this script:
+; Inno Setup script for Pawse. Build the Release preset first, then compile this script:
 ;   iscc /DAppVersion=0.5.0 installer\pawse.iss
 ; CI passes the version from CMakeLists.txt, so the installer and pawse.exe always agree.
 
@@ -46,7 +46,7 @@ Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{
 Name: "autostart"; Description: "Start Pawse when I sign in"; GroupDescription: "Startup:"; Flags: unchecked
 
 [Files]
-Source: "{#RootDir}\build\release\pawse.exe"; DestDir: "{app}"; Flags: ignoreversion
+Source: "{#RootDir}\build\Release\pawse.exe"; DestDir: "{app}"; Flags: ignoreversion
 Source: "{#RootDir}\LICENSE"; DestDir: "{app}"; DestName: "LICENSE.txt"; Flags: ignoreversion
 
 [Icons]

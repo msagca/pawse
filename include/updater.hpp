@@ -1,7 +1,7 @@
 #pragma once
+#include <windows.h>
 #include <compare>
 #include <string>
-#include <windows.h>
 namespace pawse {
 struct Version {
   UINT major = 0;

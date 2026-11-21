@@ -33,7 +33,7 @@ jobs:
         id: version
         shell: pwsh
         run: |
-          $version = (Select-String -Path build/Release/CMakeCache.txt -Pattern '^CMAKE_PROJECT_VERSION:STATIC=(.+)$').Matches[0].Groups[1].Value
+          $version = (Select-String -Path build/CMakeCache.txt -Pattern '^CMAKE_PROJECT_VERSION:STATIC=(.+)$').Matches[0].Groups[1].Value
           if ($env:GITHUB_REF_TYPE -eq 'tag' -and $env:GITHUB_REF_NAME -ne "v$version") {
             Write-Error "Tag $env:GITHUB_REF_NAME doesn't match the project version $version in CMakeLists.txt."
             exit 1
