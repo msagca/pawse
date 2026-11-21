@@ -1,10 +1,18 @@
 name: Build
 
+# Changes that only touch documentation don't build. Tag pushes always build: GitHub doesn't
+# apply path filters to tags.
 on:
   push:
     branches: [main]
     tags: ["v*"]
+    paths-ignore:
+      - "**.md"
+      - LICENSE
   pull_request:
+    paths-ignore:
+      - "**.md"
+      - LICENSE
 
 permissions:
   contents: read
