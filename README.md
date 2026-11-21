@@ -11,7 +11,7 @@ Pawse is a small native Windows tray app. Your screen stays on and visible: vide
 - **Lock the keyboard, the mouse or both**, each with its own key binding. Press it again to unlock.
 - **Optional Windows Hello check** before unlocking, so a cat that hits the binding still can't unlock.
 - **You can't lock yourself out.** <kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>Del</kbd> always works. See [Safety](docs/README.md#safety).
-- **The tray icon shows what is locked**, and a short message in the middle of the screen tells whoever touches a locked device how to unlock it.
+- **The tray icon shows what is locked**, and a short message in the middle of the screen confirms each lock and unlock and tells whoever touches a locked device how to unlock it.
 - **Signed updates**, installed only when you choose.
 
 ## Install

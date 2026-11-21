@@ -33,7 +33,7 @@ BEGIN
     LTEXT           "minutes (0 = never)", IDC_STATIC, 150, 155, 120, 8
 
     GROUPBOX        "General", IDC_STATIC, 7, 177, 272, 74
-    AUTOCHECKBOX    "Show a message when someone uses a locked keyboard or mouse", IDC_SHOW_MESSAGE, 16, 191, 254, 10, WS_TABSTOP
+    AUTOCHECKBOX    "Show a message on lock, on unlock and when a locked device is used", IDC_SHOW_MESSAGE, 16, 191, 254, 10, WS_TABSTOP
     LTEXT           "Hide the message after", IDC_STATIC, 28, 207, 78, 8
     EDITTEXT        IDC_MESSAGE_SECONDS, 108, 205, 36, 13, ES_NUMBER | WS_TABSTOP
     CONTROL         "", IDC_MESSAGE_SECONDS_SPIN, "msctls_updown32", UDS_SETBUDDYINT | UDS_ALIGNRIGHT | UDS_AUTOBUDDY | UDS_ARROWKEYS | UDS_NOTHOUSANDS, 144, 205, 10, 13

@@ -472,6 +472,7 @@ void App::Lock(unsigned devices) {
     }
     locked_devices_ |= newly_locked_devices;
     ApplyLockState();
+    FlashLockedMessage();  // the tray icon alone is easy to miss
 }
 
 void App::RequestUnlock(unsigned devices) {
@@ -499,6 +500,7 @@ void App::Unlock(unsigned devices) {
         KillTimer(window_, kTimerAutoUnlock);
     }
     ApplyLockState();
+    FlashUnlockedMessage(devices);
 }
 
 void App::FinishUnlockAttempt(HelloResult result) {
@@ -585,12 +587,36 @@ bool App::CanUnlockFromMenu() const {
            settings_dialog_ == nullptr;
 }
 
-void App::OnInputBlocked() {
+// Every blocked key press or mouse move restarts the countdown.
+void App::OnInputBlocked() { FlashLockedMessage(); }
+
+void App::FlashLockedMessage() {
     if (!settings_.show_message || locked_devices_ == kLockNone || hello_verifier_.IsActive()) {
         return;
     }
     ShowLockedMessage();
-    // Every blocked key press or mouse move restarts the countdown.
+    StartHideMessageTimer();
+}
+
+void App::FlashUnlockedMessage(unsigned unlocked_devices) {
+    if (!settings_.show_message || unlocked_devices == kLockNone || hello_verifier_.IsActive()) {
+        return;
+    }
+    const std::wstring title = Capitalize(DescribeDevices(unlocked_devices)) +
+                               (unlocked_devices == kLockBoth ? L" are unlocked" : L" is unlocked");
+    std::wstring detail;
+    if (locked_devices_ != kLockNone) {
+        detail = L"The " + DescribeDevices(locked_devices_) + L" is still locked.";
+    } else {
+        detail = L"Press " +
+                 FormatKeyBinding(settings_.bindings[GetUnlockBinding(unlocked_devices)]) +
+                 (unlocked_devices == kLockBoth ? L" to lock them again." : L" to lock it again.");
+    }
+    banner_.Show(title, detail);
+    StartHideMessageTimer();
+}
+
+void App::StartHideMessageTimer() {
     SetTimer(window_, kTimerHideMessage, settings_.message_seconds * 1000, nullptr);
 }
 

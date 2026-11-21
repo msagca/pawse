@@ -4,7 +4,7 @@
 
 Each key binding locks its device and, pressed again, unlocks it. You can also lock from the tray menu. While only the keyboard is locked, you can unlock it there too: click the paw and choose **Lock keyboard** again. A locked mouse unlocks only with a key binding, so a paw on the keyboard can't undo it.
 
-Hover over the tray icon to see what is locked. When someone presses a locked key or uses a locked mouse, a message in the middle of the screen says what is locked and how to unlock it. It ignores clicks, never takes focus and goes away a few seconds after the last attempt.
+Hover over the tray icon to see what is locked. A message in the middle of the screen confirms each lock and unlock. When someone presses a locked key or uses a locked mouse, it appears again to say what is locked and how to unlock it. It ignores clicks, never takes focus and goes away a few seconds after the last attempt.
 
 ## Settings
 
@@ -13,7 +13,7 @@ Open **Settings…** from the tray menu, or start Pawse again while it's running
 - **Key bindings.** Every binding needs <kbd>Ctrl</kbd> or <kbd>Alt</kbd>, so it's hard to press by accident.
 - **Also require Windows Hello.** After the binding, Windows asks for your PIN, fingerprint or face. This needs one of them set up in *Windows Settings > Accounts > Sign-in options*. Without Windows Hello, the key binding alone unlocks. Pawse never sees your PIN: Windows shows the prompt and only tells Pawse whether it was you.
 - **Unlock automatically after N minutes.** This is a safety net, off by default.
-- **Show a message when someone uses a locked keyboard or mouse**, and how many seconds it stays (3 by default).
+- **Show a message on lock, on unlock and when a locked device is used**, and how many seconds it stays (3 by default).
 - **Start Pawse when I sign in.**
 - **Check for updates.** On by default.
 

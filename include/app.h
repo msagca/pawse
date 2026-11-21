@@ -57,6 +57,10 @@ private:
     void ApplyLockState();
     bool CanUnlockFromMenu() const;
     void OnInputBlocked();
+    // Briefly shows what is locked, or what was just unlocked, if messages are turned on.
+    void FlashLockedMessage();
+    void FlashUnlockedMessage(unsigned unlocked_devices);
+    void StartHideMessageTimer();
     void ShowLockedMessage();
     void HideLockedMessage();
     bool BringMainWindowToFront();
