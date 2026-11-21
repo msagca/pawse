@@ -28,7 +28,7 @@ A paw appears in the notification area (tray). It turns red while something is l
 | <kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>M</kbd> | Lock or unlock the mouse |
 | <kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>L</kbd> | Lock or unlock both |
 
-You can also lock from the tray menu, and unlock a locked keyboard there by choosing **Lock keyboard** again. Change bindings and other options in **Settings…**.
+You can also lock from the tray menu, and unlock a locked keyboard there by choosing **Lock keyboard** again. Change bindings and other options in **Settings**.
 
 ## Documentation
 

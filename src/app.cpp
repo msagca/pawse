@@ -383,11 +383,11 @@ void App::ShowTrayMenu(POINT anchor) {
     if (HasUpdate()) {
         const std::wstring version = DescribeVersion(available_update_);
         const std::wstring label =
-            downloading_update_ ? L"Downloading " + version + L"…" : L"Update to " + version;
+            downloading_update_ ? L"Downloading " + version : L"Update to " + version;
         const UINT update_flag = downloading_update_ || dialog_open ? MF_GRAYED : locked_flag;
         AppendMenuW(menu, MF_STRING | update_flag, kCommandUpdate, label.c_str());
     }
-    AppendMenuW(menu, MF_STRING | locked_flag, kCommandSettings, L"Settings…");
+    AppendMenuW(menu, MF_STRING | locked_flag, kCommandSettings, L"Settings");
     AppendMenuW(menu, MF_SEPARATOR, 0, nullptr);
     AppendMenuW(menu, MF_STRING | locked_flag, kCommandExit, L"Exit");
 

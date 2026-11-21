@@ -61,7 +61,7 @@ Settings ReadSettingsFromControls(HWND dialog) {
 }
 
 void ShowHelloAvailability(HWND dialog, HelloAvailability availability) {
-    const wchar_t* status = L"Checking whether Windows Hello is set up…";
+    const wchar_t* status = L"Checking whether Windows Hello is set up";
     if (availability == HelloAvailability::kAvailable) {
         status =
             L"Windows Hello is set up. After the key binding, Windows asks for your PIN, "
