@@ -15,6 +15,8 @@ namespace pawse {
 
 enum class HelloAvailability { kUnknown, kAvailable, kUnavailable };
 enum class StartReason { kUser, kSignIn, kUpdated };
+// What clicking the most recent notification does.
+enum class NotificationAction { kNone, kUpdate };
 
 // The tray app: owns the hidden main window, the tray icon and the lock state.
 class App {
@@ -37,7 +39,9 @@ private:
     void AddTrayIcon();
     void UpdateTrayIcon();
     void RemoveTrayIcon();
-    void ShowNotification(const std::wstring& title, const std::wstring& text, bool is_warning);
+    void ShowNotification(const std::wstring& title, const std::wstring& text, bool is_warning,
+                          NotificationAction action = NotificationAction::kNone);
+    void OnNotificationClicked();
     void ShowTrayMenu(POINT anchor);
     void HandleCommand(UINT command);
     void OpenSettings();
@@ -81,6 +85,7 @@ private:
     HICON icon_locked_ = nullptr;
     UINT taskbar_created_message_ = 0;
     UINT show_settings_message_ = 0;
+    NotificationAction notification_action_ = NotificationAction::kNone;
 
     Settings settings_;
     HelloAvailability hello_availability_ = HelloAvailability::kUnknown;

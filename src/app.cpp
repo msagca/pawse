@@ -72,6 +72,8 @@ size_t GetUnlockBinding(unsigned locked_devices) {
     }
 }
 
+std::wstring DescribeVersion(const Version& version) { return L"v" + FormatVersion(version); }
+
 template <size_t Capacity>
 void CopyText(wchar_t (&destination)[Capacity], const std::wstring& text) {
     wcsncpy_s(destination, text.c_str(), _TRUNCATE);
@@ -98,7 +100,8 @@ int App::Run(HINSTANCE instance, StartReason reason) {
     DeleteDownloadedUpdates();
 
     INITCOMMONCONTROLSEX common_controls = {
-        sizeof(common_controls), ICC_HOTKEY_CLASS | ICC_UPDOWN_CLASS | ICC_STANDARD_CLASSES};
+        sizeof(common_controls),
+        ICC_HOTKEY_CLASS | ICC_UPDOWN_CLASS | ICC_STANDARD_CLASSES | ICC_LINK_CLASS};
     InitCommonControlsEx(&common_controls);
     settings_ = LoadSettings();
     if (IsStartWithWindowsEnabled()) {
@@ -121,9 +124,8 @@ int App::Run(HINSTANCE instance, StartReason reason) {
             refused_bindings + L" is used by another app. Choose a different binding in Settings.",
             true);
     } else if (reason == StartReason::kUpdated) {
-        ShowNotification(L"Pawse updated",
-                         L"Pawse is now version " + FormatVersion(GetCurrentVersion()) + L".",
-                         false);
+        ShowNotification(L"Update installed",
+                         L"You're now on " + DescribeVersion(GetCurrentVersion()) + L".", false);
     } else if (reason == StartReason::kUser) {
         ShowNotification(L"Pawse is running",
                          L"Press " + FormatKeyBinding(settings_.bindings[kBindingBoth]) +
@@ -211,6 +213,9 @@ LRESULT App::HandleMessage(UINT message, WPARAM wparam, LPARAM lparam) {
                 case NIN_KEYSELECT:
                 case WM_CONTEXTMENU:
                     ShowTrayMenu(POINT{GET_X_LPARAM(wparam), GET_Y_LPARAM(wparam)});
+                    break;
+                case NIN_BALLOONUSERCLICK:
+                    OnNotificationClicked();
                     break;
                 default:
                     break;
@@ -335,7 +340,10 @@ void App::RemoveTrayIcon() {
     Shell_NotifyIconW(NIM_DELETE, &data);
 }
 
-void App::ShowNotification(const std::wstring& title, const std::wstring& text, bool is_warning) {
+void App::ShowNotification(const std::wstring& title, const std::wstring& text, bool is_warning,
+                           NotificationAction action) {
+    // The tray icon shows one notification at a time, so a click is always on the latest one.
+    notification_action_ = action;
     NOTIFYICONDATAW data = {sizeof(data)};
     data.hWnd = window_;
     data.uID = kTrayIconId;
@@ -344,6 +352,12 @@ void App::ShowNotification(const std::wstring& title, const std::wstring& text, 
     CopyText(data.szInfoTitle, title);
     CopyText(data.szInfo, text);
     Shell_NotifyIconW(NIM_MODIFY, &data);
+}
+
+void App::OnNotificationClicked() {
+    if (notification_action_ == NotificationAction::kUpdate) {
+        StartUpdate();
+    }
 }
 
 void App::ShowTrayMenu(POINT anchor) {
@@ -367,15 +381,15 @@ void App::ShowTrayMenu(POINT anchor) {
     const UINT locked_flag = locked_devices_ != kLockNone ? MF_GRAYED : 0;
     AppendMenuW(menu, MF_SEPARATOR, 0, nullptr);
     if (HasUpdate()) {
-        const std::wstring version = FormatVersion(available_update_);
-        const std::wstring label = downloading_update_ ? L"Downloading Pawse " + version + L"…"
-                                                       : L"Update to Pawse " + version + L"…";
+        const std::wstring version = DescribeVersion(available_update_);
+        const std::wstring label =
+            downloading_update_ ? L"Downloading " + version + L"…" : L"Update to " + version;
         const UINT update_flag = downloading_update_ || dialog_open ? MF_GRAYED : locked_flag;
         AppendMenuW(menu, MF_STRING | update_flag, kCommandUpdate, label.c_str());
     }
     AppendMenuW(menu, MF_STRING | locked_flag, kCommandSettings, L"Settings…");
     AppendMenuW(menu, MF_SEPARATOR, 0, nullptr);
-    AppendMenuW(menu, MF_STRING | locked_flag, kCommandExit, L"Exit Pawse");
+    AppendMenuW(menu, MF_STRING | locked_flag, kCommandExit, L"Exit");
 
     SetForegroundWindow(window_);
     const UINT alignment = GetSystemMetrics(SM_MENUDROPALIGNMENT) ? TPM_RIGHTALIGN : TPM_LEFTALIGN;
@@ -662,10 +676,10 @@ void App::OnUpdateChecked(Version latest) {
     downloaded_installer_.clear();
     if (latest > notified_update_) {
         notified_update_ = latest;
-        const std::wstring version = FormatVersion(latest);
-        ShowNotification(
-            L"Pawse " + version + L" is available",
-            L"Choose \"Update to Pawse " + version + L"\" in the tray menu to install it.", false);
+        ShowNotification(L"Update available",
+                         L"Click here or choose \"Update to " + DescribeVersion(latest) +
+                             L"\" in the tray menu to install it.",
+                         false, NotificationAction::kUpdate);
     }
 }
 
@@ -684,25 +698,24 @@ void App::StartUpdate() {
 
 void App::OnUpdateDownloaded(UpdateDownloadResult result, std::unique_ptr<std::wstring> installer) {
     downloading_update_ = false;
-    const std::wstring version = FormatVersion(available_update_);
+    const std::wstring version = DescribeVersion(available_update_);
     switch (result) {
         case UpdateDownloadResult::kVerified:
             break;
         case UpdateDownloadResult::kDownloadFailed:
             ShowNotification(L"Update failed",
-                             L"Pawse couldn't download version " + version +
+                             L"Couldn't download " + version +
                                  L". Check your internet connection and try again.",
                              true);
             return;
         case UpdateDownloadResult::kSignatureInvalid:
             ShowNotification(L"Update not installed",
-                             L"The download of Pawse " + version +
-                                 L" failed the signature check, so Pawse didn't install it.",
+                             L"The download of " + version +
+                                 L" failed the signature check, so it wasn't installed.",
                              true);
             return;
         case UpdateDownloadResult::kSaveFailed:
-            ShowNotification(L"Update failed",
-                             L"Pawse couldn't save the download of version " + version + L".",
+            ShowNotification(L"Update failed", L"Couldn't save the download of " + version + L".",
                              true);
             return;
     }
@@ -712,10 +725,10 @@ void App::OnUpdateDownloaded(UpdateDownloadResult result, std::unique_ptr<std::w
     downloaded_installer_ = *installer;
     if (locked_devices_ != kLockNone || settings_dialog_ != nullptr) {
         // Something was locked while downloading. Installing restarts Pawse, so wait.
-        ShowNotification(
-            L"Pawse " + version + L" is ready to install",
-            L"Choose \"Update to Pawse " + version + L"\" in the tray menu again when you're done.",
-            false);
+        ShowNotification(L"Update ready",
+                         L"When you're done, click here or choose \"Update to " + version +
+                             L"\" in the tray menu to install it.",
+                         false, NotificationAction::kUpdate);
         return;
     }
     InstallUpdate();
@@ -730,7 +743,7 @@ void App::InstallUpdate() {
     if (!StartInstaller(downloaded_installer_)) {
         single_instance_mutex_ = CreateMutexW(nullptr, FALSE, kSingleInstanceMutexName);
         downloaded_installer_.clear();
-        ShowNotification(L"Update failed", L"Pawse couldn't start the installer.", true);
+        ShowNotification(L"Update failed", L"Couldn't start the installer.", true);
         return;
     }
     DestroyWindow(window_);  // setup starts the new version when it's done

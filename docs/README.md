@@ -23,7 +23,7 @@ Settings are stored in `%APPDATA%\Pawse\settings.ini`.
 
 Pawse asks GitHub for the latest release 15 seconds after it starts and then once a day. This is the only time it uses the network, and it sends nothing but its version number.
 
-When there's a new version, a notification appears and the tray menu gets an **Update to Pawse x.y.z…** item. Pawse never installs anything until you choose that item. It then downloads the installer, checks its signature, installs it silently and starts again. If the signature doesn't match, nothing is installed. You can't update while something is locked.
+When there's a new version, a notification appears and the tray menu gets an **Update to vx.y.z** item. Pawse never installs anything until you click the notification or choose that item. It then downloads the installer, checks its signature, installs it silently and starts again. If the signature doesn't match, nothing is installed. You can't update while something is locked.
 
 ## Safety
 

@@ -1,6 +1,7 @@
 #include "settings_dialog.h"
 
 #include <commctrl.h>
+#include <shellapi.h>
 
 #include <algorithm>
 #include <string>
@@ -135,6 +136,16 @@ INT_PTR CALLBACK SettingsDialogProc(HWND dialog, UINT message, WPARAM wparam, LP
             SetDialogIcons(dialog);
             SetForegroundWindow(dialog);
             return TRUE;
+        }
+        case WM_NOTIFY: {
+            const auto* notify = reinterpret_cast<const NMHDR*>(lparam);
+            if (notify->idFrom == IDC_REPOSITORY_LINK &&
+                (notify->code == NM_CLICK || notify->code == NM_RETURN)) {
+                const auto* link = reinterpret_cast<const NMLINK*>(lparam);
+                ShellExecuteW(dialog, L"open", link->item.szUrl, nullptr, nullptr, SW_SHOWNORMAL);
+                return TRUE;
+            }
+            break;
         }
         case kMessageHelloAvailability:
             ShowHelloAvailability(dialog, wparam != 0 ? HelloAvailability::kAvailable
