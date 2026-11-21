@@ -10,7 +10,6 @@ namespace {
 constexpr wchar_t kBannerClassName[] = L"Pawse.Banner";
 constexpr BYTE kBannerOpacity = 235;
 constexpr COLORREF kBackgroundColor = RGB(32, 32, 36);
-constexpr COLORREF kAccentColor = RGB(242, 140, 40);
 constexpr COLORREF kTitleColor = RGB(255, 255, 255);
 constexpr COLORREF kDetailColor = RGB(200, 200, 206);
 
@@ -70,12 +69,13 @@ bool Banner::Create(HINSTANCE instance) {
     return true;
 }
 
-void Banner::Show(const std::wstring& title, const std::wstring& detail) {
+void Banner::Show(const std::wstring& title, const std::wstring& detail, COLORREF accent_color) {
     if (window_ == nullptr) {
         return;
     }
     title_ = title;
     detail_ = detail;
+    accent_color_ = accent_color;
     Layout();
     InvalidateRect(window_, nullptr, TRUE);
 }
@@ -136,7 +136,7 @@ void Banner::Paint(HDC device_context, const RECT& client_area) const {
 
     const RECT accent = {client_area.left, client_area.top,
                          client_area.left + Scale(kAccentWidth, font_dpi_), client_area.bottom};
-    const HBRUSH accent_brush = CreateSolidBrush(kAccentColor);
+    const HBRUSH accent_brush = CreateSolidBrush(accent_color_);
     FillRect(device_context, &accent, accent_brush);
     DeleteObject(accent_brush);
 

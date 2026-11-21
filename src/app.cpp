@@ -35,6 +35,10 @@ enum MenuCommand : UINT {
     kCommandExit,
 };
 
+// Indexed by LockedDevices, like kLockStateColors.
+constexpr WORD kTrayIconResources[kLockStateCount] = {IDI_TRAY_UNLOCKED, IDI_TRAY_KEYBOARD_LOCKED,
+                                                      IDI_TRAY_MOUSE_LOCKED, IDI_TRAY_BOTH_LOCKED};
+
 constexpr UINT kLockCommands[kBindingCount] = {kCommandLockKeyboard, kCommandLockMouse,
                                                kCommandLockBoth};
 constexpr const wchar_t* kLockMenuLabels[kBindingCount] = {L"Lock keyboard", L"Lock mouse",
@@ -107,8 +111,10 @@ int App::Run(HINSTANCE instance, StartReason reason) {
     if (IsStartWithWindowsEnabled()) {
         SetStartWithWindows(true);  // keeps the sign-in entry pointing at this copy of Pawse
     }
-    LoadIconMetric(instance, MAKEINTRESOURCEW(IDI_PAWSE), LIM_SMALL, &icon_unlocked_);
-    LoadIconMetric(instance, MAKEINTRESOURCEW(IDI_PAWSE_LOCKED), LIM_SMALL, &icon_locked_);
+    for (size_t state = 0; state < kLockStateCount; ++state) {
+        LoadIconMetric(instance, MAKEINTRESOURCEW(kTrayIconResources[state]), LIM_SMALL,
+                       &tray_icons_[state]);
+    }
     taskbar_created_message_ = RegisterWindowMessageW(L"TaskbarCreated");
 
     if (!CreateMainWindow() || !banner_.Create(instance) || !input_blocker_.Start(window_)) {
@@ -143,8 +149,9 @@ int App::Run(HINSTANCE instance, StartReason reason) {
     }
 
     input_blocker_.Stop();
-    DestroyIcon(icon_unlocked_);
-    DestroyIcon(icon_locked_);
+    for (const HICON icon : tray_icons_) {
+        DestroyIcon(icon);
+    }
     if (single_instance_mutex_ != nullptr) {
         CloseHandle(single_instance_mutex_);
     }
@@ -313,7 +320,7 @@ void App::AddTrayIcon() {
     data.uID = kTrayIconId;
     data.uFlags = NIF_ICON | NIF_MESSAGE | NIF_TIP | NIF_SHOWTIP;
     data.uCallbackMessage = kMessageTrayIcon;
-    data.hIcon = icon_unlocked_;
+    data.hIcon = tray_icons_[kLockNone];
     CopyText(data.szTip, L"Pawse");
     Shell_NotifyIconW(NIM_ADD, &data);
     data.uVersion = NOTIFYICON_VERSION_4;
@@ -327,7 +334,7 @@ void App::UpdateTrayIcon() {
     data.uID = kTrayIconId;
     data.uFlags = NIF_ICON | NIF_TIP | NIF_SHOWTIP;
     const bool locked = locked_devices_ != kLockNone;
-    data.hIcon = locked ? icon_locked_ : icon_unlocked_;
+    data.hIcon = tray_icons_[locked_devices_];
     CopyText(data.szTip, locked ? L"Pawse: " + DescribeDevices(locked_devices_) + L" locked"
                                 : std::wstring(L"Pawse: unlocked"));
     Shell_NotifyIconW(NIM_MODIFY, &data);
@@ -626,7 +633,7 @@ void App::FlashUnlockedMessage(unsigned unlocked_devices) {
                  FormatKeyBinding(settings_.bindings[GetUnlockBinding(unlocked_devices)]) +
                  (unlocked_devices == kLockBoth ? L" to lock them again." : L" to lock it again.");
     }
-    banner_.Show(title, detail);
+    banner_.Show(title, detail, kLockStateColors[locked_devices_]);
     StartHideMessageTimer();
 }
 
@@ -646,7 +653,7 @@ void App::ShowLockedMessage() {
     if (settings_.require_windows_hello && hello_availability_ != HelloAvailability::kUnavailable) {
         detail += L", then confirm with Windows Hello";
     }
-    banner_.Show(title, detail + L".");
+    banner_.Show(title, detail + L".", kLockStateColors[locked_devices_]);
 }
 
 void App::HideLockedMessage() {
