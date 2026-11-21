@@ -4,7 +4,7 @@ Releases ship one file, `pawse-<version>-x64-setup.exe`, plus a signature for it
 
 ## Building the installer
 
-Install [Inno Setup](https://jrsoftware.org/isinfo.php) 6.3 or later. Build the release preset first (see [src/README.md](../src/README.md#building)), then run this from the repository root:
+Install [Inno Setup](https://jrsoftware.org/isinfo.php) 6.3 or later. Build the `Release` preset first (see [src/README.md](../src/README.md#building)), then run this from the repository root:
 
 ```powershell
 iscc /DAppVersion=0.3.0 installer\pawse.iss

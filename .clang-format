@@ -1,5 +1,28 @@
-BasedOnStyle: Google
-IndentWidth: 4
-AccessModifierOffset: -4
-ColumnLimit: 100
-IncludeBlocks: Preserve
+Language: Cpp
+BasedOnStyle: LLVM
+AlignAfterOpenBracket: DontAlign
+AlignEscapedNewlines: DontAlign
+AlignTrailingComments: false
+AllowAllArgumentsOnNextLine: false
+AllowAllParametersOfDeclarationOnNextLine: false
+AllowShortBlocksOnASingleLine: Empty
+AllowShortFunctionsOnASingleLine: Empty
+AlwaysBreakBeforeMultilineStrings: true
+BreakArrays: false
+ColumnLimit: 0
+CompactNamespaces: true
+ConstructorInitializerIndentWidth: 2
+ContinuationIndentWidth: 2
+EmptyLineBeforeAccessModifier: Never
+IndentExternBlock: Indent
+IndentRequiresClause: false
+KeepEmptyLinesAtTheStartOfBlocks: false
+MaxEmptyLinesToKeep: 0
+NamespaceIndentation: Inner
+PPIndentWidth: 2
+PackConstructorInitializers: NextLineOnly
+ReflowComments: Never
+RequiresClausePosition: WithPreceding
+SortIncludes:
+  Enabled: false
+SpacesInContainerLiterals: false

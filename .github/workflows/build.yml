@@ -1,5 +1,4 @@
 name: Build
-
 # Changes that only touch documentation don't build. Tag pushes always build: GitHub doesn't
 # apply path filters to tags.
 on:
@@ -13,10 +12,8 @@ on:
     paths-ignore:
       - "**.md"
       - LICENSE
-
 permissions:
   contents: read
-
 jobs:
   build:
     runs-on: windows-latest
@@ -30,15 +27,13 @@ jobs:
           cmd /c "`"$vs\VC\Auxiliary\Build\vcvars64.bat`" >nul && set" |
             Where-Object { $_ -match '^[^=]+=' } |
             Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
-      - name: Configure
-        run: cmake --preset release
       - name: Build
-        run: cmake --build --preset release
+        run: cmake --workflow Release
       - name: Read version
         id: version
         shell: pwsh
         run: |
-          $version = (Select-String -Path build/release/CMakeCache.txt -Pattern '^CMAKE_PROJECT_VERSION:STATIC=(.+)$').Matches[0].Groups[1].Value
+          $version = (Select-String -Path build/CMakeCache.txt -Pattern '^CMAKE_PROJECT_VERSION:STATIC=(.+)$').Matches[0].Groups[1].Value
           if ($env:GITHUB_REF_TYPE -eq 'tag' -and $env:GITHUB_REF_NAME -ne "v$version") {
             Write-Error "Tag $env:GITHUB_REF_NAME doesn't match the project version $version in CMakeLists.txt."
             exit 1
@@ -63,7 +58,6 @@ jobs:
           name: pawse
           path: dist/
           if-no-files-found: error
-
   release:
     if: startsWith(github.ref, 'refs/tags/v')
     needs: build
