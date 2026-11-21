@@ -8,22 +8,19 @@ Pawse is a small native Windows tray app. Your screen stays on and visible: vide
 
 ## Features
 
-- **Lock the keyboard, the mouse, or both**, each with its own key binding.
-- **Press the same binding again to unlock.** You choose the bindings in Settings.
-- **Optional Windows Hello check:** after the binding, Windows asks for your PIN, fingerprint or face before unlocking. A cat that happens to hit the binding still can't unlock. Pawse never sees your PIN: Windows shows the prompt and only tells Pawse whether it was you.
-- **You can't lock yourself out.** See [Safety](#safety).
-- **The tray icon shows what is locked.** When someone presses a locked key or uses a locked mouse, a short message in the middle of the screen says how to unlock. It ignores clicks, never takes focus and goes away after a few seconds.
-- **Updates only when you say so.** Pawse tells you when a new version is out and installs it when you choose to, after checking that it was signed by the Pawse release key.
+- **Lock the keyboard, the mouse or both**, each with its own key binding. Press it again to unlock.
+- **Optional Windows Hello check** before unlocking, so a cat that hits the binding still can't unlock.
+- **You can't lock yourself out.** <kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>Del</kbd> always works. See [Safety](docs/README.md#safety).
+- **The tray icon shows what is locked**, and a short message in the middle of the screen tells whoever touches a locked device how to unlock it.
+- **Signed updates**, installed only when you choose.
 
 ## Install
 
-Download `pawse-<version>-x64-setup.exe` from [Releases](https://github.com/msagca/pawse/releases) and run it. It installs Pawse for your user account (no administrator rights needed), adds it to the Start menu and to *Apps & features* for uninstalling, and can start it when you sign in.
-
-Pawse needs 64-bit Windows 10 or 11.
+Download `pawse-<version>-x64-setup.exe` from [Releases](https://github.com/msagca/pawse/releases) and run it. It needs 64-bit Windows 10 or 11 and no administrator rights.
 
 ## Usage
 
-Run Pawse from the Start menu. A paw appears in the notification area (tray). It turns red while something is locked; hover over it to see what.
+A paw appears in the notification area (tray). It turns red while something is locked.
 
 | Default binding | Action |
 | --- | --- |
@@ -31,68 +28,13 @@ Run Pawse from the Start menu. A paw appears in the notification area (tray). It
 | <kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>M</kbd> | Lock or unlock the mouse |
 | <kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>L</kbd> | Lock or unlock both |
 
-You can also lock from the tray menu. While only the keyboard is locked, you can unlock it there too: click the paw and choose **Lock keyboard** again. A locked mouse unlocks only with a key binding, so a paw on the keyboard can't undo it.
+You can also lock from the tray menu, and unlock a locked keyboard there by choosing **Lock keyboard** again. Change bindings and other options in **Settings…**.
 
-### Settings
+## Documentation
 
-Open **Settings…** from the tray menu, or start Pawse again while it's running.
-
-- **Key bindings.** Every binding needs <kbd>Ctrl</kbd> or <kbd>Alt</kbd>, so it's hard to press by accident.
-- **Also require Windows Hello.** This needs a PIN, fingerprint or face set up in *Windows Settings > Accounts > Sign-in options*. Without Windows Hello, the key binding alone unlocks.
-- **Unlock automatically after N minutes.** This is a safety net, off by default.
-- **Show a message when someone uses a locked keyboard or mouse**, and how many seconds it stays (3 by default).
-- **Start Pawse when I sign in.**
-- **Check for updates.** On by default.
-
-Settings are stored in `%APPDATA%\Pawse\settings.ini`.
-
-### Updates
-
-Pawse asks GitHub for the latest release 15 seconds after it starts and then once a day. This is the only time it uses the network, and it sends nothing but its version number. When there's a new version, a notification appears and the tray menu gets an **Update to Pawse x.y.z…** item. Pawse never installs anything until you choose that item. It then downloads the installer, checks its signature, installs it silently and starts again. If the signature doesn't match, nothing is installed. You can't update while something is locked.
-
-## Safety
-
-Pawse is built so that a locked computer can always be unlocked:
-
-- **<kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>Del</kbd> always works.** No app can block it. From there, open Task Manager and end `pawse.exe`; all locks go away with it.
-- **The Windows Hello prompt times out.** While it's open, the keyboard is let through so you can type your PIN. After 60 seconds without an answer, Pawse locks again.
-- **If Windows Hello is turned off or removed**, the key binding alone unlocks.
-- **If Pawse stops responding** while something is locked, a separate watchdog thread removes the locks after a few seconds. Windows also removes input hooks that stop responding.
-- **Optional automatic unlock** after a set number of minutes.
-
-## Limitations
-
-- **Apps running as administrator:** Windows doesn't let a normal app block input meant for an elevated window, such as Task Manager. Run Pawse as administrator if you need that.
-- **Touchscreen and pen:** input from these may still get through, depending on the device and the app.
-- **Shortcuts Windows reserves:** <kbd>Win</kbd>+<kbd>L</kbd> and <kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>Del</kbd> can't be blocked. Both only lock the session or open the security screen, which is harmless.
-
-## Building from source
-
-Requirements:
-
-- Visual Studio 2022 or later with the **Desktop development with C++** workload. This includes MSVC, the Windows SDK, CMake and Ninja.
-- Windows 10 SDK 10.0.22000 or later, for `UserConsentVerifierInterop.h`.
-
-From a **Developer PowerShell for VS**:
-
-```powershell
-cmake --preset release
-cmake --build --preset release
-```
-
-The app is written to `build/release/pawse.exe`. Use the `debug` preset for a debug build. You can also open the folder in Visual Studio or VS Code (CMake Tools), which pick up `CMakePresets.json`.
-
-To build the installer, and for how releases are signed, see [installer/README.md](installer/README.md).
-
-The icons are generated by `tools/make_icons.py` (needs Pillow). The generated files are committed.
-
-## How it works
-
-- **Blocking:** low-level keyboard and mouse hooks (`WH_KEYBOARD_LL`, `WH_MOUSE_LL`) on a dedicated high-priority thread drop input while a device is locked.
-- **Bindings while the keyboard is locked:** blocked keys never reach `RegisterHotKey`, so the keyboard hook watches for the bindings itself.
-- **No stuck keys:** keys and buttons held down when a lock starts are allowed to be released.
-- **Windows Hello:** the prompt comes from `UserConsentVerifier` through `IUserConsentVerifierInterop`, which attaches it to a desktop window.
-- **Code layout:** C++20, plain Win32 and C++/WinRT, built with CMake and Ninja on MSVC.
+- [docs/README.md](docs/README.md): settings, updates, safety and limitations.
+- [src/README.md](src/README.md): building from source and how Pawse works.
+- [installer/README.md](installer/README.md): the installer, releases and release signing.
 
 ## Contributing
 

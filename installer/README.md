@@ -4,7 +4,7 @@ Releases ship one file, `pawse-<version>-x64-setup.exe`, plus a signature for it
 
 ## Building the installer
 
-Install [Inno Setup](https://jrsoftware.org/isinfo.php) 6.3 or later. Build the release preset first (see the [top-level README](../README.md#building-from-source)), then run this from the repository root:
+Install [Inno Setup](https://jrsoftware.org/isinfo.php) 6.3 or later. Build the release preset first (see [src/README.md](../src/README.md#building)), then run this from the repository root:
 
 ```powershell
 iscc /DAppVersion=0.3.0 installer\pawse.iss
@@ -31,7 +31,7 @@ The `release` job in `.github/workflows/build.yml` signs every installer with an
 To check a release by hand, put the installer and its `.sig` in one folder and create the signed line (Git Bash or Linux):
 
 ```sh
-f=pawse-0.3.0-x64-setup.exe; printf '%s  %s\n' "$(sha256sum < "$f" | cut -d' ' -f1)" "$f" > signed-line.txt
+printf '%s  %s\n' "$(sha256sum < pawse-0.3.0-x64-setup.exe | cut -d' ' -f1)" pawse-0.3.0-x64-setup.exe > signed-line.txt
 ```
 
 Then verify it against the public key:
