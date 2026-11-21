@@ -12,7 +12,7 @@ Pawse is a small native Windows tray app. Your screen stays on and visible: vide
 - **Press the same binding again to unlock.** You choose the bindings in Settings.
 - **Optional Windows Hello check:** after the binding, Windows asks for your PIN, fingerprint or face before unlocking. A cat that happens to hit the binding still can't unlock. Pawse never sees your PIN: Windows shows the prompt and only tells Pawse whether it was you.
 - **You can't lock yourself out.** See [Safety](#safety).
-- **A small banner** at the top of the screen says what is locked and how to unlock it. It ignores clicks and never takes focus.
+- **The tray icon shows what is locked.** When someone presses a locked key or uses a locked mouse, a short message in the middle of the screen says how to unlock. It ignores clicks, never takes focus and goes away after a few seconds.
 - **An installer or one portable `pawse.exe`**, whichever you prefer.
 
 ## Install
@@ -26,7 +26,7 @@ Both need 64-bit Windows 10 or 11.
 
 ## Usage
 
-Run Pawse (or `pawse.exe`). A paw appears in the notification area (tray). It turns red while something is locked.
+Run Pawse (or `pawse.exe`). A paw appears in the notification area (tray). It turns red while something is locked; hover over it to see what.
 
 | Default binding | Action |
 | --- | --- |
@@ -34,7 +34,7 @@ Run Pawse (or `pawse.exe`). A paw appears in the notification area (tray). It tu
 | <kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>M</kbd> | Lock or unlock the mouse |
 | <kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>L</kbd> | Lock or unlock both |
 
-You can also lock from the tray menu. Unlocking works only with a key binding, so clicking can't undo a lock.
+You can also lock from the tray menu. While only the keyboard is locked, you can unlock it there too: click the paw and choose **Lock keyboard** again. A locked mouse unlocks only with a key binding, so a paw on the keyboard can't undo it.
 
 ### Settings
 
@@ -43,7 +43,7 @@ Open **Settings…** from the tray menu, or start `pawse.exe` again while it's r
 - **Key bindings.** Every binding needs <kbd>Ctrl</kbd> or <kbd>Alt</kbd>, so it's hard to press by accident.
 - **Also require Windows Hello.** This needs a PIN, fingerprint or face set up in *Windows Settings > Accounts > Sign-in options*. Without Windows Hello, the key binding alone unlocks.
 - **Unlock automatically after N minutes.** This is a safety net, off by default.
-- **Show a banner while locked.**
+- **Show a message when someone uses a locked keyboard or mouse**, and how many seconds it stays (3 by default).
 - **Start Pawse when I sign in.**
 
 Settings are stored in `%APPDATA%\Pawse\settings.ini`.

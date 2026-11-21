@@ -30,6 +30,7 @@ constexpr UINT kMessageHookFailed = WM_APP + 2;         // wParam: devices no lo
 constexpr UINT kMessageHelloResult = WM_APP + 3;        // wParam: HelloResult, lParam: attempt id
 constexpr UINT kMessageHelloAvailability = WM_APP + 4;  // wParam: 1 if Windows Hello is set up
 constexpr UINT kMessageTrayIcon = WM_APP + 5;           // Shell_NotifyIcon callback
+constexpr UINT kMessageInputBlocked = WM_APP + 6;       // a locked device was used
 
 // Marks keyboard input that Pawse injects itself, so its own hooks let it through.
 constexpr ULONG_PTR kPawseInputTag = 0x50415753;  // "PAWS"

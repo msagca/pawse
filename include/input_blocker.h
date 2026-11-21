@@ -13,7 +13,8 @@ namespace pawse {
 // The hooks run on their own thread so a busy main window (a dialog, a menu) never delays input.
 // While the keyboard is blocked, the hook itself watches for the key bindings, because blocked
 // keys never reach RegisterHotKey. A matched binding is posted to the main window as
-// kMessageBindingPressed.
+// kMessageBindingPressed. Other blocked input is reported as kMessageInputBlocked, at most a
+// few times a second.
 //
 // Safety: if the main window stops responding while input is blocked, the hook thread removes
 // its hooks and posts kMessageHookFailed, so a hung Pawse can't trap the user.

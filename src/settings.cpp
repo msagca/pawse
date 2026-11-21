@@ -14,7 +14,7 @@ constexpr wchar_t kRunValueName[] = L"Pawse";
 
 constexpr wchar_t kBindingsSection[] = L"Bindings";
 constexpr wchar_t kUnlockSection[] = L"Unlock";
-constexpr wchar_t kBannerSection[] = L"Banner";
+constexpr wchar_t kMessageSection[] = L"Message";
 constexpr const wchar_t* kBindingKeys[kBindingCount] = {L"Keyboard", L"Mouse", L"KeyboardAndMouse"};
 
 std::wstring GetSettingsPath(bool create_directory) {
@@ -80,7 +80,10 @@ Settings LoadSettings() {
         ReadNumber(path, kUnlockSection, L"RequireWindowsHello", 0) != 0;
     settings.auto_unlock_minutes =
         std::min(ReadNumber(path, kUnlockSection, L"AutoUnlockMinutes", 0), kMaxAutoUnlockMinutes);
-    settings.show_banner = ReadNumber(path, kBannerSection, L"Show", 1) != 0;
+    settings.show_message = ReadNumber(path, kMessageSection, L"Show", 1) != 0;
+    settings.message_seconds =
+        std::clamp(ReadNumber(path, kMessageSection, L"Seconds", kDefaultMessageSeconds),
+                   kMinMessageSeconds, kMaxMessageSeconds);
     return settings;
 }
 
@@ -98,7 +101,9 @@ bool SaveSettings(const Settings& settings) {
                          settings.require_windows_hello ? L"1" : L"0");
     saved &= WriteString(path, kUnlockSection, L"AutoUnlockMinutes",
                          std::to_wstring(settings.auto_unlock_minutes));
-    saved &= WriteString(path, kBannerSection, L"Show", settings.show_banner ? L"1" : L"0");
+    saved &= WriteString(path, kMessageSection, L"Show", settings.show_message ? L"1" : L"0");
+    saved &=
+        WriteString(path, kMessageSection, L"Seconds", std::to_wstring(settings.message_seconds));
     return saved;
 }
 

@@ -6,8 +6,8 @@
 
 namespace pawse {
 
-// A small, translucent, click-through notice at the top of the primary screen that says what is
-// locked and how to unlock it. It never takes focus.
+// A translucent, click-through message in the middle of the screen that says what is locked and
+// how to unlock it. It never takes focus.
 class Banner {
 public:
     Banner() = default;
@@ -18,6 +18,7 @@ public:
     bool Create(HINSTANCE instance);
     void Show(const std::wstring& title, const std::wstring& detail);
     void Hide();
+    bool IsVisible() const { return window_ != nullptr && IsWindowVisible(window_); }
 
 private:
     static LRESULT CALLBACK WindowProc(HWND window, UINT message, WPARAM wparam, LPARAM lparam);

@@ -18,6 +18,7 @@ constexpr wchar_t kSingleInstanceMutexName[] = L"Local\\Pawse.SingleInstance";
 constexpr UINT kTrayIconId = 1;
 constexpr UINT_PTR kTimerAutoUnlock = 1;
 constexpr UINT_PTR kTimerHelloTimeout = 2;
+constexpr UINT_PTR kTimerHideMessage = 3;
 // The Windows Hello prompt lets the keyboard through, so it must not stay open forever.
 constexpr UINT kHelloTimeoutMilliseconds = 60 * 1000;
 
@@ -210,6 +211,9 @@ LRESULT App::HandleMessage(UINT message, WPARAM wparam, LPARAM lparam) {
                 OnBindingPressed(wparam);
             }
             return 0;
+        case kMessageInputBlocked:
+            OnInputBlocked();
+            return 0;
         case kMessageHookFailed:
             OnHooksFailed(static_cast<unsigned>(wparam));
             return 0;
@@ -224,7 +228,6 @@ LRESULT App::HandleMessage(UINT message, WPARAM wparam, LPARAM lparam) {
             if (settings_dialog_ != nullptr) {
                 PostMessageW(settings_dialog_, kMessageHelloAvailability, wparam, 0);
             }
-            UpdateBanner();
             return 0;
         case WM_TIMER:
             if (wparam == kTimerAutoUnlock) {
@@ -232,6 +235,8 @@ LRESULT App::HandleMessage(UINT message, WPARAM wparam, LPARAM lparam) {
             } else if (wparam == kTimerHelloTimeout) {
                 hello_verifier_.Abandon();
                 FinishUnlockAttempt(HelloResult::kCanceled);
+            } else if (wparam == kTimerHideMessage) {
+                HideLockedMessage();
             }
             return 0;
         case WM_SYSKEYDOWN:
@@ -316,21 +321,21 @@ void App::ShowNotification(const std::wstring& title, const std::wstring& text, 
 void App::ShowTrayMenu(POINT anchor) {
     const HMENU menu = CreatePopupMenu();
     const bool dialog_open = settings_dialog_ != nullptr;
+    const bool can_unlock = CanUnlockFromMenu();
     for (size_t index = 0; index < kBindingCount; ++index) {
         const unsigned devices = kBindingDevices[index];
         const bool already_locked = (locked_devices_ & devices) == devices;
         UINT flags = MF_STRING;
         if (already_locked) {
-            flags |= MF_CHECKED;
+            flags |= MF_CHECKED;  // clicking a checked item unlocks, where that's allowed
         }
-        if (already_locked || dialog_open) {
+        if ((already_locked && !can_unlock) || dialog_open) {
             flags |= MF_GRAYED;
         }
         const std::wstring label = std::wstring(kLockMenuLabels[index]) + L"\t" +
                                    FormatKeyBinding(settings_.bindings[index]);
         AppendMenuW(menu, flags, kLockCommands[index], label.c_str());
     }
-    // Unlocking is only possible with a key binding, so a cat can't click its way out.
     const UINT locked_flag = locked_devices_ != kLockNone ? MF_GRAYED : 0;
     AppendMenuW(menu, MF_SEPARATOR, 0, nullptr);
     AppendMenuW(menu, MF_STRING | locked_flag, kCommandSettings, L"Settings…");
@@ -348,7 +353,12 @@ void App::ShowTrayMenu(POINT anchor) {
 void App::HandleCommand(UINT command) {
     for (size_t index = 0; index < kBindingCount; ++index) {
         if (command == kLockCommands[index]) {
-            Lock(kBindingDevices[index]);
+            const unsigned devices = kBindingDevices[index];
+            if ((locked_devices_ & devices) != devices) {
+                Lock(devices);
+            } else if (CanUnlockFromMenu()) {
+                RequestUnlock(devices);
+            }
             return;
         }
     }
@@ -435,6 +445,7 @@ void App::RequestUnlock(unsigned devices) {
         return;
     }
     pending_unlock_devices_ = devices;
+    HideLockedMessage();  // it would sit on top of the Windows Hello prompt
     BringMainWindowToFront();
     const std::wstring prompt = L"Unlock the " + DescribeDevices(devices) + L" locked by Pawse.";
     if (!hello_verifier_.Begin(window_, prompt, window_)) {
@@ -523,29 +534,47 @@ void App::ApplyLockState() {
     }
     input_blocker_.Update(blocked_devices, settings_.bindings);
     UpdateTrayIcon();
-    UpdateBanner();
+    if (!settings_.show_message || locked_devices_ == kLockNone || hello_verifier_.IsActive()) {
+        HideLockedMessage();
+    } else if (banner_.IsVisible()) {
+        ShowLockedMessage();  // keeps the text in step with what is still locked
+    }
 }
 
-void App::UpdateBanner() {
-    if (!settings_.show_banner || locked_devices_ == kLockNone) {
-        banner_.Hide();
+// A lock can be undone from the tray menu only while the mouse is free, so the menu can't be
+// reached with a paw on the keyboard alone.
+bool App::CanUnlockFromMenu() const {
+    return (locked_devices_ & kLockMouse) == 0 && !hello_verifier_.IsActive() &&
+           settings_dialog_ == nullptr;
+}
+
+void App::OnInputBlocked() {
+    if (!settings_.show_message || locked_devices_ == kLockNone || hello_verifier_.IsActive()) {
         return;
     }
-    if (hello_verifier_.IsActive()) {
-        banner_.Show(
-            L"Waiting for Windows Hello",
-            L"Confirm it's you to unlock the " + DescribeDevices(pending_unlock_devices_) + L".");
-        return;
-    }
+    ShowLockedMessage();
+    // Every blocked key press or mouse move restarts the countdown.
+    SetTimer(window_, kTimerHideMessage, settings_.message_seconds * 1000, nullptr);
+}
+
+void App::ShowLockedMessage() {
     const std::wstring title = Capitalize(DescribeDevices(locked_devices_)) +
                                (locked_devices_ == kLockBoth ? L" are locked" : L" is locked");
-    std::wstring detail = L"Press " +
-                          FormatKeyBinding(settings_.bindings[GetUnlockBinding(locked_devices_)]) +
-                          L" to unlock";
+    std::wstring detail =
+        L"Press " + FormatKeyBinding(settings_.bindings[GetUnlockBinding(locked_devices_)]);
+    if (CanUnlockFromMenu()) {
+        detail += L" or use the paw icon in the tray";
+    }
+    detail += L" to unlock";
     if (settings_.require_windows_hello && hello_availability_ != HelloAvailability::kUnavailable) {
         detail += L", then confirm with Windows Hello";
     }
     banner_.Show(title, detail + L".");
+}
+
+void App::HideLockedMessage() {
+    KillTimer(window_, kTimerHideMessage);
+    banner_.Hide();
 }
 
 bool App::BringMainWindowToFront() {

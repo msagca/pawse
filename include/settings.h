@@ -8,6 +8,9 @@
 namespace pawse {
 
 constexpr UINT kMaxAutoUnlockMinutes = 24 * 60;
+constexpr UINT kMinMessageSeconds = 1;
+constexpr UINT kMaxMessageSeconds = 60;
+constexpr UINT kDefaultMessageSeconds = 3;
 
 struct Settings {
     // Indexed by BindingIndex.
@@ -18,7 +21,9 @@ struct Settings {
     }};
     bool require_windows_hello = false;
     UINT auto_unlock_minutes = 0;  // 0 means never
-    bool show_banner = true;
+    // Whether a message shows when someone uses a locked device, and for how long.
+    bool show_message = true;
+    UINT message_seconds = kDefaultMessageSeconds;
 };
 
 // Settings live in %APPDATA%\Pawse\settings.ini. Missing or invalid values fall back to defaults.

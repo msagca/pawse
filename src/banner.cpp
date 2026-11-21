@@ -15,12 +15,10 @@ constexpr COLORREF kTitleColor = RGB(255, 255, 255);
 constexpr COLORREF kDetailColor = RGB(200, 200, 206);
 
 // Sizes in pixels at 96 DPI.
-constexpr int kHorizontalPadding = 20;
-constexpr int kVerticalPadding = 12;
-constexpr int kAccentWidth = 4;
-constexpr int kLineGap = 2;
-constexpr int kTopMargin = 24;
-constexpr int kCornerDiameter = 16;
+constexpr int kHorizontalPadding = 28;
+constexpr int kVerticalPadding = 18;
+constexpr int kAccentWidth = 5;
+constexpr int kLineGap = 4;
 
 int Scale(int value, UINT dpi) { return MulDiv(value, static_cast<int>(dpi), 96); }
 
@@ -98,13 +96,16 @@ void Banner::UpdateFonts(UINT dpi) {
     if (detail_font_ != nullptr) {
         DeleteObject(detail_font_);
     }
-    title_font_ = CreateUiFont(11, FW_SEMIBOLD, dpi);
-    detail_font_ = CreateUiFont(9, FW_NORMAL, dpi);
+    title_font_ = CreateUiFont(14, FW_SEMIBOLD, dpi);
+    detail_font_ = CreateUiFont(10, FW_NORMAL, dpi);
     font_dpi_ = dpi;
 }
 
 void Banner::Layout() {
-    const HMONITOR monitor = MonitorFromPoint(POINT{0, 0}, MONITOR_DEFAULTTOPRIMARY);
+    // The screen the user is most likely looking at: the one with the mouse pointer.
+    POINT cursor = {};
+    GetCursorPos(&cursor);
+    const HMONITOR monitor = MonitorFromPoint(cursor, MONITOR_DEFAULTTOPRIMARY);
     MONITORINFO monitor_info = {sizeof(monitor_info)};
     GetMonitorInfoW(monitor, &monitor_info);
     UINT dpi_x = 96;
@@ -123,10 +124,8 @@ void Banner::Layout() {
         Scale(2 * kVerticalPadding + kLineGap, dpi_x) + title_size.cy + detail_size.cy;
     const RECT& work_area = monitor_info.rcWork;
     const int left = work_area.left + (work_area.right - work_area.left - width) / 2;
-    const int top = work_area.top + Scale(kTopMargin, dpi_x);
+    const int top = work_area.top + (work_area.bottom - work_area.top - height) / 2;
 
-    const int corner = Scale(kCornerDiameter, dpi_x);
-    SetWindowRgn(window_, CreateRoundRectRgn(0, 0, width + 1, height + 1, corner, corner), FALSE);
     SetWindowPos(window_, HWND_TOPMOST, left, top, width, height, SWP_NOACTIVATE | SWP_SHOWWINDOW);
 }
 

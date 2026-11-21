@@ -15,6 +15,13 @@ constexpr int kBindingControlIds[kBindingCount] = {IDC_BINDING_KEYBOARD, IDC_BIN
                                                    IDC_BINDING_BOTH};
 constexpr const wchar_t* kBindingTargets[kBindingCount] = {L"the keyboard", L"the mouse", L"both"};
 
+// The message duration only matters while the message is turned on.
+void UpdateMessageControls(HWND dialog) {
+    const bool show_message = IsDlgButtonChecked(dialog, IDC_SHOW_MESSAGE) == BST_CHECKED;
+    EnableWindow(GetDlgItem(dialog, IDC_MESSAGE_SECONDS), show_message);
+    EnableWindow(GetDlgItem(dialog, IDC_MESSAGE_SECONDS_SPIN), show_message);
+}
+
 void ShowSettingsInControls(HWND dialog, const Settings& settings, bool start_with_windows) {
     for (size_t index = 0; index < kBindingCount; ++index) {
         SendDlgItemMessageW(dialog, kBindingControlIds[index], HKM_SETHOTKEY,
@@ -23,7 +30,9 @@ void ShowSettingsInControls(HWND dialog, const Settings& settings, bool start_wi
     CheckDlgButton(dialog, IDC_REQUIRE_HELLO,
                    settings.require_windows_hello ? BST_CHECKED : BST_UNCHECKED);
     SetDlgItemInt(dialog, IDC_AUTO_UNLOCK, settings.auto_unlock_minutes, FALSE);
-    CheckDlgButton(dialog, IDC_SHOW_BANNER, settings.show_banner ? BST_CHECKED : BST_UNCHECKED);
+    CheckDlgButton(dialog, IDC_SHOW_MESSAGE, settings.show_message ? BST_CHECKED : BST_UNCHECKED);
+    SetDlgItemInt(dialog, IDC_MESSAGE_SECONDS, settings.message_seconds, FALSE);
+    UpdateMessageControls(dialog);
     CheckDlgButton(dialog, IDC_START_WITH_WINDOWS,
                    start_with_windows ? BST_CHECKED : BST_UNCHECKED);
 }
@@ -39,7 +48,11 @@ Settings ReadSettingsFromControls(HWND dialog) {
     BOOL is_number = FALSE;
     const UINT minutes = GetDlgItemInt(dialog, IDC_AUTO_UNLOCK, &is_number, FALSE);
     settings.auto_unlock_minutes = is_number ? std::min(minutes, kMaxAutoUnlockMinutes) : 0;
-    settings.show_banner = IsDlgButtonChecked(dialog, IDC_SHOW_BANNER) == BST_CHECKED;
+    settings.show_message = IsDlgButtonChecked(dialog, IDC_SHOW_MESSAGE) == BST_CHECKED;
+    const UINT seconds = GetDlgItemInt(dialog, IDC_MESSAGE_SECONDS, &is_number, FALSE);
+    settings.message_seconds = is_number
+                                   ? std::clamp(seconds, kMinMessageSeconds, kMaxMessageSeconds)
+                                   : kDefaultMessageSeconds;
     return settings;
 }
 
@@ -111,6 +124,8 @@ INT_PTR CALLBACK SettingsDialogProc(HWND dialog, UINT message, WPARAM wparam, LP
             }
             SendDlgItemMessageW(dialog, IDC_AUTO_UNLOCK_SPIN, UDM_SETRANGE32, 0,
                                 kMaxAutoUnlockMinutes);
+            SendDlgItemMessageW(dialog, IDC_MESSAGE_SECONDS_SPIN, UDM_SETRANGE32,
+                                kMinMessageSeconds, kMaxMessageSeconds);
             ShowSettingsInControls(dialog, app->GetSettings(), IsStartWithWindowsEnabled());
             ShowHelloAvailability(dialog, app->GetHelloAvailability());
             app->RefreshHelloAvailability();
@@ -124,6 +139,9 @@ INT_PTR CALLBACK SettingsDialogProc(HWND dialog, UINT message, WPARAM wparam, LP
             return TRUE;
         case WM_COMMAND:
             switch (LOWORD(wparam)) {
+                case IDC_SHOW_MESSAGE:
+                    UpdateMessageControls(dialog);
+                    return TRUE;
                 case IDC_RESTORE_DEFAULTS:
                     ShowSettingsInControls(
                         dialog, Settings{},

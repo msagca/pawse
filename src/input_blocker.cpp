@@ -11,6 +11,8 @@ constexpr UINT kWatchdogIntervalMilliseconds = 1000;
 // IsHungAppWindow already waits about 5 seconds; this many failed checks in a row on top of
 // that removes the hooks.
 constexpr int kHungChecksBeforeRelease = 3;
+// Blocked input is reported to the main window at most this often, so mouse moves don't flood it.
+constexpr ULONGLONG kBlockedInputNoticeIntervalMilliseconds = 250;
 
 enum MouseButton : int {
     kMouseButtonLeft,
@@ -39,6 +41,7 @@ struct HookThreadState {
     std::array<bool, 256> pass_key_release{};
     std::array<bool, kMouseButtonCount> pass_button_release{};
     int hung_checks = 0;
+    ULONGLONG last_blocked_input_notice = 0;
 };
 
 HookThreadState g_hook_state;
@@ -86,6 +89,16 @@ UINT GetHeldModifiers(const std::array<bool, 256>& key_is_down) {
     return modifiers;
 }
 
+// Tells the main window that a locked device was used, so it can say how to unlock.
+void ReportBlockedInput(HookThreadState& state) {
+    const ULONGLONG now = GetTickCount64();
+    if (now - state.last_blocked_input_notice < kBlockedInputNoticeIntervalMilliseconds) {
+        return;
+    }
+    state.last_blocked_input_notice = now;
+    PostMessageW(state.notify_window, kMessageInputBlocked, 0, 0);
+}
+
 LRESULT CALLBACK KeyboardHookProc(int code, WPARAM message, LPARAM data) {
     if (code != HC_ACTION) {
         return CallNextHookEx(nullptr, code, message, data);
@@ -113,10 +126,11 @@ LRESULT CALLBACK KeyboardHookProc(int code, WPARAM message, LPARAM data) {
         for (size_t index = 0; index < kBindingCount; ++index) {
             if (state.bindings[index] == pressed) {
                 PostMessageW(state.notify_window, kMessageBindingPressed, index, 0);
-                break;
+                return 1;
             }
         }
     }
+    ReportBlockedInput(state);
     return 1;
 }
 
@@ -144,6 +158,7 @@ LRESULT CALLBACK MouseHookProc(int code, WPARAM message, LPARAM data) {
                 g_hook_state.pass_button_release[released_button] = false;
                 return CallNextHookEx(nullptr, code, message, data);
             }
+            ReportBlockedInput(g_hook_state);
             return 1;
         }
     }

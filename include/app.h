@@ -52,7 +52,10 @@ private:
     void OnHooksFailed(unsigned devices);
     void OnAutoUnlockTimer();
     void ApplyLockState();
-    void UpdateBanner();
+    bool CanUnlockFromMenu() const;
+    void OnInputBlocked();
+    void ShowLockedMessage();
+    void HideLockedMessage();
     bool BringMainWindowToFront();
 
     HINSTANCE instance_ = nullptr;
