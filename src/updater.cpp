@@ -1,16 +1,17 @@
-#include <updater.hpp>
-#include <bcrypt.h>
-#include <shellapi.h>
-#include <winhttp.h>
+#include <windows.h>
 #include <array>
+#include <bcrypt.h>
+#include <common.hpp>
 #include <cstring>
 #include <filesystem>
 #include <memory>
 #include <optional>
+#include <shellapi.h>
 #include <string_view>
 #include <thread>
-#include <common.hpp>
+#include <updater.hpp>
 #include <version.hpp>
+#include <winhttp.h>
 namespace pawse {
 namespace {
   constexpr wchar_t kHost[] = L"github.com";

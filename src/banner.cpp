@@ -1,6 +1,7 @@
+#include <windows.h>
+#include <algorithm>
 #include <banner.hpp>
 #include <shellscalingapi.h>
-#include <algorithm>
 namespace pawse {
 namespace {
   constexpr wchar_t kBannerClassName[] = L"Pawse.Banner";

@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.25)
 project(
     Pawse
-    VERSION 0.5.0
+    VERSION 0.6.0
     DESCRIPTION "Keyboard and mouse lock for Windows"
     LANGUAGES CXX RC
 )
@@ -18,6 +18,7 @@ add_executable(
     WIN32
     src/app.cpp
     src/banner.cpp
+    src/binding_box.cpp
     src/hello_verifier.cpp
     src/input_blocker.cpp
     src/key_binding.cpp

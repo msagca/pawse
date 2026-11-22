@@ -1,5 +1,5 @@
-#include <input_blocker.hpp>
 #include <future>
+#include <input_blocker.hpp>
 #include <memory>
 namespace pawse {
 namespace {
@@ -40,24 +40,6 @@ namespace {
   HookThreadState g_hook_state;
   bool IsTaggedPawseInput(ULONG_PTR extra_info) {
     return extra_info == kPawseInputTag;
-  }
-  bool IsModifierKey(UINT virtual_key) {
-    switch (virtual_key) {
-    case VK_SHIFT:
-    case VK_CONTROL:
-    case VK_MENU:
-    case VK_LSHIFT:
-    case VK_RSHIFT:
-    case VK_LCONTROL:
-    case VK_RCONTROL:
-    case VK_LMENU:
-    case VK_RMENU:
-    case VK_LWIN:
-    case VK_RWIN:
-      return true;
-    default:
-      return false;
-    }
   }
   bool IsMouseButtonKey(UINT virtual_key) {
     return virtual_key == VK_LBUTTON || virtual_key == VK_RBUTTON || virtual_key == VK_MBUTTON ||

@@ -1,7 +1,8 @@
-#include <settings.hpp>
-#include <knownfolders.h>
-#include <shlobj.h>
+#include <windows.h>
 #include <algorithm>
+#include <knownfolders.h>
+#include <settings.hpp>
+#include <shlobj.h>
 #include <string>
 namespace pawse {
 namespace {
