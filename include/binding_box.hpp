@@ -1,6 +1,6 @@
 #pragma once
-#include <key_binding.hpp>
 #include <windows.h>
+#include <key_binding.hpp>
 namespace pawse {
 // A read-only box that records a key binding, of the window class BINDING_BOX_CLASS_NAME. Click
 // it, or press Space or Enter while it has focus, and its border lights up until a key is

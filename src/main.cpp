@@ -1,7 +1,7 @@
 #include <windows.h>
+#include <app.hpp>
 #include <cwchar>
 #include <winrt/base.h>
-#include <app.hpp>
 int WINAPI wWinMain(HINSTANCE instance, HINSTANCE, PWSTR command_line, int) {
   winrt::init_apartment(winrt::apartment_type::single_threaded);
   const auto has_option = [command_line](const wchar_t *option) {

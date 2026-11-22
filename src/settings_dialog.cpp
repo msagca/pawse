@@ -1,3 +1,4 @@
+#include <windows.h>
 #include <algorithm>
 #include <app.hpp>
 #include <binding_box.hpp>

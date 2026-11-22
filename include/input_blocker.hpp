@@ -1,8 +1,8 @@
 #pragma once
 #include <array>
-#include <thread>
 #include <common.hpp>
 #include <key_binding.hpp>
+#include <thread>
 namespace pawse {
 // Blocks physical keyboard and mouse input with low-level hooks on a dedicated thread.
 //

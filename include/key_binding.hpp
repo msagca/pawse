@@ -1,6 +1,6 @@
 #pragma once
-#include <string>
 #include <windows.h>
+#include <string>
 namespace pawse {
 // A key combination such as Ctrl+Alt+K, in the form RegisterHotKey expects.
 struct KeyBinding {
