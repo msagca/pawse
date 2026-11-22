@@ -10,14 +10,6 @@ namespace {
   constexpr int kHungChecksBeforeRelease = 3;
   // Blocked input is reported to the main window at most this often, so mouse moves don't flood it.
   constexpr ULONGLONG kBlockedInputNoticeIntervalMilliseconds = 250;
-  enum MouseButton : int {
-    kMouseButtonLeft,
-    kMouseButtonRight,
-    kMouseButtonMiddle,
-    kMouseButtonX1,
-    kMouseButtonX2,
-    kMouseButtonCount,
-  };
   struct UpdateRequest {
     unsigned blocked_devices = kLockNone;
     std::array<KeyBinding, kBindingCount> bindings{};
@@ -28,18 +20,19 @@ namespace {
     HHOOK keyboard_hook = nullptr;
     HHOOK mouse_hook = nullptr;
     std::array<KeyBinding, kBindingCount> bindings{};
-    // Keys the hook has seen go down and not yet up, to match bindings.
+    // Keys held down, to match bindings and to tell auto-repeat from a new press.
     std::array<bool, 256> key_is_down{};
-    // Keys and buttons that were already held when blocking started. Their release is let
-    // through so Windows doesn't think they are stuck down after unlocking.
-    std::array<bool, 256> pass_key_release{};
-    std::array<bool, kMouseButtonCount> pass_button_release{};
     int hung_checks = 0;
     ULONGLONG last_blocked_input_notice = 0;
   };
   HookThreadState g_hook_state;
   bool IsTaggedPawseInput(ULONG_PTR extra_info) {
     return extra_info == kPawseInputTag;
+  }
+  // Whether Windows has seen this key or button go down and not yet up. Blocked input never
+  // reaches this state. Inside a hook, it doesn't include the event being handled yet.
+  bool IsDownForWindows(UINT virtual_key) {
+    return (GetAsyncKeyState(static_cast<int>(virtual_key)) & 0x8000) != 0;
   }
   bool IsMouseButtonKey(UINT virtual_key) {
     return virtual_key == VK_LBUTTON || virtual_key == VK_RBUTTON || virtual_key == VK_MBUTTON ||
@@ -82,8 +75,10 @@ namespace {
     const UINT virtual_key = event.vkCode & 0xFF;
     if (event.flags & LLKHF_UP) {
       state.key_is_down[virtual_key] = false;
-      if (state.pass_key_release[virtual_key]) {
-        state.pass_key_release[virtual_key] = false;
+      // A release passes whenever Windows saw the key go down, so no key is left stuck: one
+      // held when the lock started, or one pressed where the hook can't see it, such as in a
+      // window of an app running as administrator.
+      if (IsDownForWindows(virtual_key)) {
         return CallNextHookEx(nullptr, code, message, data);
       }
       return 1;
@@ -102,27 +97,30 @@ namespace {
     ReportBlockedInput(state);
     return 1;
   }
-  int GetReleasedButton(WPARAM message, const MSLLHOOKSTRUCT &event) {
+  // The virtual key of the button this message releases, or 0 if it releases none. The hook
+  // reports logical buttons, but GetAsyncKeyState reports physical ones.
+  UINT GetReleasedButtonKey(WPARAM message, const MSLLHOOKSTRUCT &event) {
+    const bool buttons_swapped = GetSystemMetrics(SM_SWAPBUTTON) != 0;
     switch (message) {
     case WM_LBUTTONUP:
-      return kMouseButtonLeft;
+      return buttons_swapped ? VK_RBUTTON : VK_LBUTTON;
     case WM_RBUTTONUP:
-      return kMouseButtonRight;
+      return buttons_swapped ? VK_LBUTTON : VK_RBUTTON;
     case WM_MBUTTONUP:
-      return kMouseButtonMiddle;
+      return VK_MBUTTON;
     case WM_XBUTTONUP:
-      return HIWORD(event.mouseData) == XBUTTON1 ? kMouseButtonX1 : kMouseButtonX2;
+      return HIWORD(event.mouseData) == XBUTTON1 ? VK_XBUTTON1 : VK_XBUTTON2;
     default:
-      return -1;
+      return 0;
     }
   }
   LRESULT CALLBACK MouseHookProc(int code, WPARAM message, LPARAM data) {
     if (code == HC_ACTION) {
       const auto &event = *reinterpret_cast<const MSLLHOOKSTRUCT *>(data);
       if (!IsTaggedPawseInput(event.dwExtraInfo)) {
-        const int released_button = GetReleasedButton(message, event);
-        if (released_button >= 0 && g_hook_state.pass_button_release[released_button]) {
-          g_hook_state.pass_button_release[released_button] = false;
+        // Like a key release, a button release passes whenever Windows saw the button go down.
+        const UINT released_button = GetReleasedButtonKey(message, event);
+        if (released_button != 0 && IsDownForWindows(released_button)) {
           return CallNextHookEx(nullptr, code, message, data);
         }
         ReportBlockedInput(g_hook_state);
@@ -131,28 +129,21 @@ namespace {
     }
     return CallNextHookEx(nullptr, code, message, data);
   }
-  bool IsPhysicallyDown(int virtual_key) {
-    return (GetAsyncKeyState(virtual_key) & 0x8000) != 0;
-  }
+  // Replaces the tracked keys with the keys Windows sees held. The hook reports left and right
+  // modifiers, never the combined VK_SHIFT, VK_CONTROL and VK_MENU.
   void RememberHeldKeys(HookThreadState &state) {
     for (UINT virtual_key = 1; virtual_key < 256; ++virtual_key) {
       const bool tracked = !IsMouseButtonKey(virtual_key) && virtual_key != VK_SHIFT &&
                            virtual_key != VK_CONTROL && virtual_key != VK_MENU;
-      const bool held = tracked && IsPhysicallyDown(static_cast<int>(virtual_key));
-      state.key_is_down[virtual_key] = held;
-      state.pass_key_release[virtual_key] = held;
+      state.key_is_down[virtual_key] = tracked && IsDownForWindows(virtual_key);
     }
   }
-  void RememberHeldButtons(HookThreadState &state) {
-    // GetAsyncKeyState reports physical buttons; the hook reports logical ones.
-    const bool buttons_swapped = GetSystemMetrics(SM_SWAPBUTTON) != 0;
-    const bool primary_down = IsPhysicallyDown(VK_LBUTTON);
-    const bool secondary_down = IsPhysicallyDown(VK_RBUTTON);
-    state.pass_button_release[kMouseButtonLeft] = buttons_swapped ? secondary_down : primary_down;
-    state.pass_button_release[kMouseButtonRight] = buttons_swapped ? primary_down : secondary_down;
-    state.pass_button_release[kMouseButtonMiddle] = IsPhysicallyDown(VK_MBUTTON);
-    state.pass_button_release[kMouseButtonX1] = IsPhysicallyDown(VK_XBUTTON1);
-    state.pass_button_release[kMouseButtonX2] = IsPhysicallyDown(VK_XBUTTON2);
+  // The hook never sees input on the secure desktop (the lock screen, Ctrl+Alt+Del, UAC
+  // prompts). Keys released there would stay tracked as held and keep bindings from matching.
+  void CALLBACK OnDesktopSwitch(HWINEVENTHOOK, DWORD, HWND, LONG, LONG, DWORD, DWORD) {
+    if (g_hook_state.keyboard_hook != nullptr) {
+      RememberHeldKeys(g_hook_state);
+    }
   }
   void RemoveHook(HHOOK &hook) {
     if (hook != nullptr) {
@@ -168,18 +159,19 @@ namespace {
     unsigned failed_devices = kLockNone;
     if (request.blocked_devices & kLockKeyboard) {
       if (state.keyboard_hook == nullptr) {
-        RememberHeldKeys(state);
         state.keyboard_hook = SetWindowsHookExW(WH_KEYBOARD_LL, KeyboardHookProc, module, 0);
         if (state.keyboard_hook == nullptr) {
           failed_devices |= kLockKeyboard;
         }
+        // Read after installing: Windows holds new input for the hook until this thread reads
+        // messages again, so this read can't miss a change the hook won't see.
+        RememberHeldKeys(state);
       }
     } else {
       RemoveHook(state.keyboard_hook);
     }
     if (request.blocked_devices & kLockMouse) {
       if (state.mouse_hook == nullptr) {
-        RememberHeldButtons(state);
         state.mouse_hook = SetWindowsHookExW(WH_MOUSE_LL, MouseHookProc, module, 0);
         if (state.mouse_hook == nullptr) {
           failed_devices |= kLockMouse;
@@ -224,6 +216,7 @@ namespace {
     HookThreadState &state = g_hook_state;
     state.notify_window = notify_window;
     const UINT_PTR watchdog_timer = SetTimer(nullptr, 0, kWatchdogIntervalMilliseconds, nullptr);
+    const HWINEVENTHOOK desktop_switch_hook = SetWinEventHook(EVENT_SYSTEM_DESKTOPSWITCH, EVENT_SYSTEM_DESKTOPSWITCH, nullptr, OnDesktopSwitch, 0, 0, WINEVENT_OUTOFCONTEXT);
     ready.set_value();
     while (GetMessageW(&message, nullptr, 0, 0) > 0) {
       if (message.message == kHookMessageUpdate) {
@@ -233,6 +226,9 @@ namespace {
       } else if (message.message == WM_TIMER && message.hwnd == nullptr) {
         CheckMainWindowResponds(state);
       }
+    }
+    if (desktop_switch_hook != nullptr) {
+      UnhookWinEvent(desktop_switch_hook);
     }
     KillTimer(nullptr, watchdog_timer);
     RemoveHook(state.keyboard_hook);

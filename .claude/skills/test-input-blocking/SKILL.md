@@ -9,12 +9,12 @@ These cases need a real keyboard and a person at the desk. Walk the user through
 
 ## What can go wrong
 
-The keyboard hook in `src/input_blocker.cpp` tracks which keys are down (`key_is_down`) to match bindings, and which held keys may still be released (`pass_key_release`). Two kinds of bug follow from that tracking:
+The hooks in `src/input_blocker.cpp` let a key or button release through whenever `IsDownForWindows` says Windows saw it go down. The keyboard hook also tracks which keys are down (`key_is_down`) to match bindings. Two kinds of bug can follow:
 
 - **Stuck key:** Windows saw a key go down but Pawse blocked its release. Every later click or key press acts as if that key were held.
 - **Stale tracking:** Pawse missed a key's release, so it thinks a modifier is still held. Bindings then match with an extra modifier, and the unlock binding does nothing.
 
-The hook never sees input on the secure desktop: the lock screen, Ctrl+Alt+Del and UAC prompts. Releases made there never reach it.
+The hooks never see input on the secure desktop: the lock screen, Ctrl+Alt+Del and UAC prompts. `OnDesktopSwitch` re-reads the held keys when the desktop switches, so releases made there don't leave stale tracking.
 
 ## Setup
 
