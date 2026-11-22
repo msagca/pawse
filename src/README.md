@@ -27,7 +27,8 @@ python tools/make_icons.py
 
 - **Blocking:** low-level keyboard and mouse hooks (`WH_KEYBOARD_LL`, `WH_MOUSE_LL`) on a dedicated high-priority thread drop input while a device is locked, and report it so Pawse can show how to unlock.
 - **Bindings while the keyboard is locked:** blocked keys never reach `RegisterHotKey`, so the keyboard hook watches for the bindings itself.
-- **No stuck keys:** keys and buttons held down when a lock starts are allowed to be released.
+- **No stuck keys:** a key or button release is let through whenever Windows saw it go down, such as a key held when the lock started.
+- **Secure desktop:** the hooks can't see the lock screen, <kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>Del</kbd> or UAC prompts. When the desktop switches, the keyboard hook takes the keys Windows sees held as the keys that are down, so a release made there can't keep a binding from matching.
 - **Windows Hello:** the prompt comes from `UserConsentVerifier` through `IUserConsentVerifierInterop`, which attaches it to a desktop window.
 - **Updates:** WinHTTP finds the latest release through GitHub's `releases/latest` redirect and downloads the installer. BCrypt checks its ECDSA signature against the public key built into `updater.cpp`. See [installer/README.md](../installer/README.md#release-signing).
 - **Code layout:** C++20, plain Win32 and C++/WinRT, built with CMake and MSVC. Headers are in `include/`, sources in `src/`.
