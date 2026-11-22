@@ -116,9 +116,11 @@ int App::Run(HINSTANCE instance, StartReason reason) {
       L"You're now on " + DescribeVersion(GetCurrentVersion()) + L".",
       false);
   } else if (reason == StartReason::kUser) {
+    const KeyBinding &lock_both = settings_.bindings[kBindingBoth];
     ShowNotification(L"Pawse is running",
-      L"Press " + FormatKeyBinding(settings_.bindings[kBindingBoth]) +
-        L" to lock the keyboard and mouse. Click the paw icon for more.",
+      lock_both.IsEmpty() ? L"Click the paw icon to lock the keyboard or mouse."
+                          : L"Press " + FormatKeyBinding(lock_both) +
+                              L" to lock the keyboard and mouse. Click the paw icon for more.",
       false);
   }
   if (settings_.check_for_updates) {
@@ -347,11 +349,13 @@ void App::ShowTrayMenu(POINT anchor) {
     if (already_locked) {
       flags |= MF_CHECKED; // clicking a checked item unlocks, where that's allowed
     }
-    if ((already_locked && !can_unlock) || dialog_open) {
+    if ((already_locked && !can_unlock) || (!already_locked && !CanLock(devices)) || dialog_open) {
       flags |= MF_GRAYED;
     }
-    const std::wstring label = std::wstring(kLockMenuLabels[index]) + L"\t" +
-                               FormatKeyBinding(settings_.bindings[index]);
+    std::wstring label = kLockMenuLabels[index];
+    if (!settings_.bindings[index].IsEmpty()) {
+      label += L"\t" + FormatKeyBinding(settings_.bindings[index]);
+    }
     AppendMenuW(menu, flags, kLockCommands[index], label.c_str());
   }
   const UINT locked_flag = locked_devices_ != kLockNone ? MF_GRAYED : 0;
@@ -444,9 +448,13 @@ void App::OnBindingPressed(size_t binding_index) {
     Lock(target_devices);
   }
 }
+bool App::CanLock(unsigned devices) const {
+  const bool locks_mouse = ((locked_devices_ | devices) & kLockMouse) != 0;
+  return !locks_mouse || FindUnlockBinding(kLockMouse) != nullptr;
+}
 void App::Lock(unsigned devices) {
   const unsigned newly_locked_devices = devices & ~locked_devices_;
-  if (newly_locked_devices == kLockNone) {
+  if (newly_locked_devices == kLockNone || !CanLock(devices)) {
     return;
   }
   if (locked_devices_ == kLockNone && settings_.auto_unlock_minutes > 0) {
@@ -561,6 +569,36 @@ bool App::CanUnlockFromMenu() const {
   return (locked_devices_ & kLockMouse) == 0 && !hello_verifier_.IsActive() &&
          settings_dialog_ == nullptr;
 }
+const KeyBinding *App::FindUnlockBinding(unsigned devices) const {
+  const KeyBinding &exact = settings_.bindings[GetUnlockBinding(devices)];
+  if (!exact.IsEmpty()) {
+    return &exact;
+  }
+  for (size_t index = 0; index < kBindingCount; ++index) {
+    const bool unlocks_all = (kBindingDevices[index] & devices) == devices;
+    if (unlocks_all && !settings_.bindings[index].IsEmpty()) {
+      return &settings_.bindings[index];
+    }
+  }
+  return nullptr;
+}
+std::wstring App::DescribeUnlock() const {
+  const std::wstring tray = L"use the paw icon in the tray";
+  if (const KeyBinding *binding = FindUnlockBinding(locked_devices_)) {
+    return L"Press " + FormatKeyBinding(*binding) +
+           (CanUnlockFromMenu() ? L" or " + tray : std::wstring()) + L" to unlock";
+  }
+  const KeyBinding *mouse = FindUnlockBinding(kLockMouse);
+  if (locked_devices_ != kLockBoth || mouse == nullptr) {
+    return Capitalize(tray) + L" to unlock";
+  }
+  // Without a binding for both, each device unlocks on its own.
+  const std::wstring unlock_mouse = FormatKeyBinding(*mouse) + L" to unlock the mouse";
+  if (const KeyBinding *keyboard = FindUnlockBinding(kLockKeyboard)) {
+    return L"Press " + FormatKeyBinding(*keyboard) + L" to unlock the keyboard and " + unlock_mouse;
+  }
+  return L"Press " + unlock_mouse + L", then " + tray + L" to unlock the keyboard";
+}
 // Every blocked key press or mouse move restarts the countdown.
 void App::OnInputBlocked() {
   FlashLockedMessage();
@@ -582,8 +620,9 @@ void App::FlashUnlockedMessage(unsigned unlocked_devices) {
   if (locked_devices_ != kLockNone) {
     detail = L"The " + DescribeDevices(locked_devices_) + L" is still locked.";
   } else {
-    detail = L"Press " +
-             FormatKeyBinding(settings_.bindings[GetUnlockBinding(unlocked_devices)]) +
+    const KeyBinding &binding = settings_.bindings[GetUnlockBinding(unlocked_devices)];
+    detail = (binding.IsEmpty() ? L"Use the paw icon in the tray"
+                                : L"Press " + FormatKeyBinding(binding)) +
              (unlocked_devices == kLockBoth ? L" to lock them again." : L" to lock it again.");
   }
   banner_.Show(title, detail, kLockStateColors[locked_devices_]);
@@ -595,12 +634,7 @@ void App::StartHideMessageTimer() {
 void App::ShowLockedMessage() {
   const std::wstring title = Capitalize(DescribeDevices(locked_devices_)) +
                              (locked_devices_ == kLockBoth ? L" are locked" : L" is locked");
-  std::wstring detail =
-    L"Press " + FormatKeyBinding(settings_.bindings[GetUnlockBinding(locked_devices_)]);
-  if (CanUnlockFromMenu()) {
-    detail += L" or use the paw icon in the tray";
-  }
-  detail += L" to unlock";
+  std::wstring detail = DescribeUnlock();
   if (settings_.require_windows_hello && hello_availability_ != HelloAvailability::kUnavailable) {
     detail += L", then confirm with Windows Hello";
   }

@@ -62,15 +62,10 @@ namespace {
       availability != HelloAvailability::kUnavailable);
   }
   std::wstring ValidateBindings(const Settings &settings) {
-    for (size_t index = 0; index < kBindingCount; ++index) {
-      if (settings.bindings[index].IsEmpty()) {
-        return L"Choose a key binding for locking " + std::wstring(kBindingTargets[index]) +
-               L".";
-      }
-    }
     for (size_t first = 0; first < kBindingCount; ++first) {
       for (size_t second = first + 1; second < kBindingCount; ++second) {
-        if (settings.bindings[first] == settings.bindings[second]) {
+        const KeyBinding &binding = settings.bindings[first];
+        if (!binding.IsEmpty() && binding == settings.bindings[second]) {
           return L"Locking " + std::wstring(kBindingTargets[first]) + L" and " +
                  kBindingTargets[second] +
                  L" use the same key binding. Choose a different one for each.";

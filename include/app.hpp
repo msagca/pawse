@@ -52,6 +52,9 @@ private:
   std::wstring RegisterHotkeys();
   void UnregisterHotkeys();
   void OnBindingPressed(size_t binding_index);
+  // The tray menu can't unlock a locked mouse, so the mouse is locked only while a key binding
+  // can unlock it.
+  bool CanLock(unsigned devices) const;
   void Lock(unsigned devices);
   void RequestUnlock(unsigned devices);
   void Unlock(unsigned devices);
@@ -60,6 +63,11 @@ private:
   void OnAutoUnlockTimer();
   void ApplyLockState();
   bool CanUnlockFromMenu() const;
+  // The binding that unlocks all of these devices at once, preferring the one for exactly them,
+  // or nullptr if none is set.
+  const KeyBinding *FindUnlockBinding(unsigned devices) const;
+  // How to unlock what is locked, such as "Press Ctrl+Alt+L to unlock".
+  std::wstring DescribeUnlock() const;
   void OnInputBlocked();
   // Briefly shows what is locked, or what was just unlocked, if messages are turned on.
   void FlashLockedMessage();

@@ -105,6 +105,9 @@ KeyBinding ParseKeyBinding(const std::wstring &text, const KeyBinding &fallback)
   if (swscanf_s(text.c_str(), L"%u,%u", &modifiers, &virtual_key) != 2) {
     return fallback;
   }
+  if (virtual_key == 0) {
+    return {}; // cleared in Settings
+  }
   const bool has_known_modifiers = (modifiers & ~kKnownModifiers) == 0;
   const bool has_valid_key = virtual_key > 0 && virtual_key < 0xFF;
   if (!has_known_modifiers || !has_valid_key || !IsAllowedKeyBinding({modifiers, virtual_key})) {
