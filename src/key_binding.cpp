@@ -1,6 +1,5 @@
-#include <key_binding.hpp>
-#include <commctrl.h>
 #include <cwchar>
+#include <key_binding.hpp>
 namespace pawse {
 namespace {
   constexpr UINT kKnownModifiers = MOD_ALT | MOD_CONTROL | MOD_SHIFT | MOD_WIN;
@@ -49,51 +48,51 @@ std::wstring FormatKeyBinding(const KeyBinding &binding) {
   if (binding.IsEmpty()) {
     return L"(none)";
   }
+  return FormatModifiers(binding.modifiers) + GetKeyName(binding.virtual_key);
+}
+std::wstring FormatModifiers(UINT modifiers) {
   std::wstring text;
-  if (binding.modifiers & MOD_CONTROL) {
+  if (modifiers & MOD_CONTROL) {
     text += L"Ctrl+";
   }
-  if (binding.modifiers & MOD_ALT) {
+  if (modifiers & MOD_ALT) {
     text += L"Alt+";
   }
-  if (binding.modifiers & MOD_SHIFT) {
+  if (modifiers & MOD_SHIFT) {
     text += L"Shift+";
   }
-  if (binding.modifiers & MOD_WIN) {
+  if (modifiers & MOD_WIN) {
     text += L"Win+";
   }
-  return text + GetKeyName(binding.virtual_key);
+  return text;
 }
-WORD KeyBindingToHotkeyControlValue(const KeyBinding &binding) {
-  BYTE flags = 0;
-  if (binding.modifiers & MOD_SHIFT) {
-    flags |= HOTKEYF_SHIFT;
+bool IsModifierKey(UINT virtual_key) {
+  switch (virtual_key) {
+  case VK_SHIFT:
+  case VK_CONTROL:
+  case VK_MENU:
+  case VK_LSHIFT:
+  case VK_RSHIFT:
+  case VK_LCONTROL:
+  case VK_RCONTROL:
+  case VK_LMENU:
+  case VK_RMENU:
+  case VK_LWIN:
+  case VK_RWIN:
+    return true;
+  default:
+    return false;
   }
-  if (binding.modifiers & MOD_CONTROL) {
-    flags |= HOTKEYF_CONTROL;
-  }
-  if (binding.modifiers & MOD_ALT) {
-    flags |= HOTKEYF_ALT;
-  }
-  if (IsExtendedKey(binding.virtual_key)) {
-    flags |= HOTKEYF_EXT;
-  }
-  return MAKEWORD(static_cast<BYTE>(binding.virtual_key), flags);
 }
-KeyBinding KeyBindingFromHotkeyControlValue(WORD value) {
-  const BYTE flags = HIBYTE(value);
-  KeyBinding binding;
-  binding.virtual_key = LOBYTE(value);
-  if (flags & HOTKEYF_SHIFT) {
-    binding.modifiers |= MOD_SHIFT;
+bool IsAllowedKeyBinding(const KeyBinding &binding) {
+  if (binding.IsEmpty() || IsModifierKey(binding.virtual_key)) {
+    return false;
   }
-  if (flags & HOTKEYF_CONTROL) {
-    binding.modifiers |= MOD_CONTROL;
+  if (binding.modifiers & (MOD_CONTROL | MOD_ALT | MOD_WIN)) {
+    return true;
   }
-  if (flags & HOTKEYF_ALT) {
-    binding.modifiers |= MOD_ALT;
-  }
-  return binding;
+  const UINT key = binding.virtual_key;
+  return (key >= VK_F1 && key <= VK_F24) || key == VK_PAUSE || key == VK_SCROLL;
 }
 std::wstring SerializeKeyBinding(const KeyBinding &binding) {
   wchar_t text[32] = {};
@@ -108,7 +107,7 @@ KeyBinding ParseKeyBinding(const std::wstring &text, const KeyBinding &fallback)
   }
   const bool has_known_modifiers = (modifiers & ~kKnownModifiers) == 0;
   const bool has_valid_key = virtual_key > 0 && virtual_key < 0xFF;
-  if (!has_known_modifiers || !has_valid_key) {
+  if (!has_known_modifiers || !has_valid_key || !IsAllowedKeyBinding({modifiers, virtual_key})) {
     return fallback;
   }
   return KeyBinding{modifiers, virtual_key};

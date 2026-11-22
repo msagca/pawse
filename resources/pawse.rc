@@ -12,42 +12,43 @@ IDI_TRAY_KEYBOARD_LOCKED ICON "tray-keyboard-locked.ico"
 IDI_TRAY_MOUSE_LOCKED ICON "tray-mouse-locked.ico"
 IDI_TRAY_BOTH_LOCKED ICON "tray-both-locked.ico"
 
-IDD_SETTINGS DIALOGEX 0, 0, 286, 282
+IDD_SETTINGS DIALOGEX 0, 0, 286, 292
 STYLE DS_SETFONT | DS_MODALFRAME | DS_FIXEDSYS | DS_CENTER | WS_POPUP | WS_CAPTION | WS_SYSMENU
 EXSTYLE WS_EX_APPWINDOW
 CAPTION "Pawse settings"
 FONT 9, "Segoe UI", 400, 0, 0x1
 BEGIN
-    GROUPBOX        "Key bindings", IDC_STATIC, 7, 7, 272, 84
+    GROUPBOX        "Key bindings", IDC_STATIC, 7, 7, 272, 94
     LTEXT           "Lock or unlock the keyboard:", IDC_STATIC, 16, 22, 120, 8
-    CONTROL         "", IDC_BINDING_KEYBOARD, "msctls_hotkey32", WS_BORDER | WS_TABSTOP, 140, 20, 130, 13
+    CONTROL         "", IDC_BINDING_KEYBOARD, BINDING_BOX_CLASS_NAME, WS_TABSTOP, 140, 20, 130, 13
     LTEXT           "Lock or unlock the mouse:", IDC_STATIC, 16, 40, 120, 8
-    CONTROL         "", IDC_BINDING_MOUSE, "msctls_hotkey32", WS_BORDER | WS_TABSTOP, 140, 38, 130, 13
+    CONTROL         "", IDC_BINDING_MOUSE, BINDING_BOX_CLASS_NAME, WS_TABSTOP, 140, 38, 130, 13
     LTEXT           "Lock or unlock both:", IDC_STATIC, 16, 58, 120, 8
-    CONTROL         "", IDC_BINDING_BOTH, "msctls_hotkey32", WS_BORDER | WS_TABSTOP, 140, 56, 130, 13
-    LTEXT           "Click a box and press the new keys. Bindings need Ctrl or Alt.", IDC_STATIC, 16, 76, 254, 8
+    CONTROL         "", IDC_BINDING_BOTH, BINDING_BOX_CLASS_NAME, WS_TABSTOP, 140, 56, 130, 13
+    LTEXT           "Click a box and press the new keys. Esc cancels and Backspace clears.", IDC_STATIC, 16, 76, 254, 8
+    LTEXT           "Bindings need Ctrl, Alt or Win, except F1 to F24, Pause and Scroll Lock.", IDC_STATIC, 16, 86, 254, 8
 
-    GROUPBOX        "Unlocking", IDC_STATIC, 7, 96, 272, 76
-    AUTOCHECKBOX    "Also require Windows Hello (PIN, fingerprint or face)", IDC_REQUIRE_HELLO, 16, 110, 254, 10, WS_TABSTOP
-    LTEXT           "", IDC_HELLO_STATUS, 28, 123, 242, 26
-    LTEXT           "Unlock automatically after", IDC_STATIC, 16, 155, 90, 8
-    EDITTEXT        IDC_AUTO_UNLOCK, 108, 153, 36, 13, ES_NUMBER | WS_TABSTOP
-    CONTROL         "", IDC_AUTO_UNLOCK_SPIN, "msctls_updown32", UDS_SETBUDDYINT | UDS_ALIGNRIGHT | UDS_AUTOBUDDY | UDS_ARROWKEYS | UDS_NOTHOUSANDS, 144, 153, 10, 13
-    LTEXT           "minutes (0 = never)", IDC_STATIC, 150, 155, 120, 8
+    GROUPBOX        "Unlocking", IDC_STATIC, 7, 106, 272, 76
+    AUTOCHECKBOX    "Also require Windows Hello (PIN, fingerprint or face)", IDC_REQUIRE_HELLO, 16, 120, 254, 10, WS_TABSTOP
+    LTEXT           "", IDC_HELLO_STATUS, 28, 133, 242, 26
+    LTEXT           "Unlock automatically after", IDC_STATIC, 16, 165, 90, 8
+    EDITTEXT        IDC_AUTO_UNLOCK, 108, 163, 36, 13, ES_NUMBER | WS_TABSTOP
+    CONTROL         "", IDC_AUTO_UNLOCK_SPIN, "msctls_updown32", UDS_SETBUDDYINT | UDS_ALIGNRIGHT | UDS_AUTOBUDDY | UDS_ARROWKEYS | UDS_NOTHOUSANDS, 144, 163, 10, 13
+    LTEXT           "minutes (0 = never)", IDC_STATIC, 150, 165, 120, 8
 
-    GROUPBOX        "General", IDC_STATIC, 7, 177, 272, 74
-    AUTOCHECKBOX    "Show a message on lock, on unlock and when a locked device is used", IDC_SHOW_MESSAGE, 16, 191, 254, 10, WS_TABSTOP
-    LTEXT           "Hide the message after", IDC_STATIC, 28, 207, 78, 8
-    EDITTEXT        IDC_MESSAGE_SECONDS, 108, 205, 36, 13, ES_NUMBER | WS_TABSTOP
-    CONTROL         "", IDC_MESSAGE_SECONDS_SPIN, "msctls_updown32", UDS_SETBUDDYINT | UDS_ALIGNRIGHT | UDS_AUTOBUDDY | UDS_ARROWKEYS | UDS_NOTHOUSANDS, 144, 205, 10, 13
-    LTEXT           "seconds", IDC_STATIC, 150, 207, 120, 8
-    AUTOCHECKBOX    "Start Pawse when I sign in", IDC_START_WITH_WINDOWS, 16, 223, 254, 10, WS_TABSTOP
-    AUTOCHECKBOX    "Check for updates (asks before installing)", IDC_CHECK_FOR_UPDATES, 16, 237, 254, 10, WS_TABSTOP
+    GROUPBOX        "General", IDC_STATIC, 7, 187, 272, 74
+    AUTOCHECKBOX    "Show a message on lock, on unlock and when a locked device is used", IDC_SHOW_MESSAGE, 16, 201, 254, 10, WS_TABSTOP
+    LTEXT           "Hide the message after", IDC_STATIC, 28, 217, 78, 8
+    EDITTEXT        IDC_MESSAGE_SECONDS, 108, 215, 36, 13, ES_NUMBER | WS_TABSTOP
+    CONTROL         "", IDC_MESSAGE_SECONDS_SPIN, "msctls_updown32", UDS_SETBUDDYINT | UDS_ALIGNRIGHT | UDS_AUTOBUDDY | UDS_ARROWKEYS | UDS_NOTHOUSANDS, 144, 215, 10, 13
+    LTEXT           "seconds", IDC_STATIC, 150, 217, 120, 8
+    AUTOCHECKBOX    "Start Pawse when I sign in", IDC_START_WITH_WINDOWS, 16, 233, 254, 10, WS_TABSTOP
+    AUTOCHECKBOX    "Check for updates (asks before installing)", IDC_CHECK_FOR_UPDATES, 16, 247, 254, 10, WS_TABSTOP
 
-    PUSHBUTTON      "Restore defaults", IDC_RESTORE_DEFAULTS, 7, 261, 72, 14
-    CONTROL         "<a href=""https://github.com/msagca/pawse"">GitHub repository</a>", IDC_REPOSITORY_LINK, "SysLink", WS_TABSTOP, 87, 264, 84, 10
-    DEFPUSHBUTTON   "OK", IDOK, 175, 261, 50, 14
-    PUSHBUTTON      "Cancel", IDCANCEL, 229, 261, 50, 14
+    PUSHBUTTON      "Restore defaults", IDC_RESTORE_DEFAULTS, 7, 271, 72, 14
+    CONTROL         "<a href=""https://github.com/msagca/pawse"">GitHub repository</a>", IDC_REPOSITORY_LINK, "SysLink", WS_TABSTOP, 87, 274, 84, 10
+    DEFPUSHBUTTON   "OK", IDOK, 175, 271, 50, 14
+    PUSHBUTTON      "Cancel", IDCANCEL, 229, 271, 50, 14
 END
 
 VS_VERSION_INFO VERSIONINFO

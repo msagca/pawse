@@ -2,6 +2,8 @@
 #ifndef IDC_STATIC
 #define IDC_STATIC (-1)
 #endif
+// The settings dialog's key binding boxes. See binding_box.hpp.
+#define BINDING_BOX_CLASS_NAME "Pawse.BindingBox"
 #define IDI_PAWSE 101
 #define IDI_TRAY_UNLOCKED 102
 #define IDI_TRAY_KEYBOARD_LOCKED 103

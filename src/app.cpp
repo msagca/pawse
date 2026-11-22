@@ -1,11 +1,12 @@
 #include <app.hpp>
+#include <binding_box.hpp>
 #include <commctrl.h>
-#include <shellapi.h>
-#include <windowsx.h>
 #include <cwctype>
-#include <utility>
 #include <resource.hpp>
 #include <settings_dialog.hpp>
+#include <shellapi.h>
+#include <utility>
+#include <windowsx.h>
 namespace pawse {
 namespace {
   constexpr wchar_t kMainWindowClassName[] = L"Pawse.MainWindow";
@@ -87,7 +88,7 @@ int App::Run(HINSTANCE instance, StartReason reason) {
   DeleteDownloadedUpdates();
   INITCOMMONCONTROLSEX common_controls = {
     sizeof(common_controls),
-    ICC_HOTKEY_CLASS | ICC_UPDOWN_CLASS | ICC_STANDARD_CLASSES | ICC_LINK_CLASS};
+    ICC_UPDOWN_CLASS | ICC_STANDARD_CLASSES | ICC_LINK_CLASS};
   InitCommonControlsEx(&common_controls);
   settings_ = LoadSettings();
   if (IsStartWithWindowsEnabled()) {
@@ -97,7 +98,7 @@ int App::Run(HINSTANCE instance, StartReason reason) {
     LoadIconMetric(instance, MAKEINTRESOURCEW(kTrayIconResources[state]), LIM_SMALL, &tray_icons_[state]);
   }
   taskbar_created_message_ = RegisterWindowMessageW(L"TaskbarCreated");
-  if (!CreateMainWindow() || !banner_.Create(instance) || !input_blocker_.Start(window_)) {
+  if (!RegisterBindingBoxClass(instance) || !CreateMainWindow() || !banner_.Create(instance) || !input_blocker_.Start(window_)) {
     MessageBoxW(nullptr, L"Pawse couldn't start.", L"Pawse", MB_ICONERROR | MB_OK);
     return 1;
   }
@@ -398,7 +399,7 @@ void App::OpenSettings() {
   if (locked_devices_ != kLockNone) {
     return;
   }
-  // While the dialog is open, the hotkey boxes need to receive the key bindings themselves.
+  // While the dialog is open, the binding boxes need to receive the key bindings themselves.
   UnregisterHotkeys();
   ShowSettingsDialog(instance_, *this);
   const std::wstring refused_bindings = RegisterHotkeys();

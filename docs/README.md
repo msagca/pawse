@@ -10,7 +10,7 @@ Hover over the tray icon to see what is locked. A message in the middle of the s
 
 Open **Settings** from the tray menu, or start Pawse again while it's running.
 
-- **Key bindings.** Every binding needs <kbd>Ctrl</kbd> or <kbd>Alt</kbd>, so it's hard to press by accident.
+- **Key bindings.** Click a box and press the new keys. <kbd>Esc</kbd> cancels and <kbd>Backspace</kbd> clears the binding. Every binding needs <kbd>Ctrl</kbd>, <kbd>Alt</kbd> or <kbd>Win</kbd>, so it's hard to press by accident. The exceptions are keys that are rarely typed: <kbd>F1</kbd> to <kbd>F24</kbd>, <kbd>Pause</kbd> and <kbd>Scroll Lock</kbd>.
 - **Also require Windows Hello.** After the binding, Windows asks for your PIN, fingerprint or face. This needs one of them set up in *Windows Settings > Accounts > Sign-in options*. Without Windows Hello, the key binding alone unlocks. Pawse never sees your PIN: Windows shows the prompt and only tells Pawse whether it was you.
 - **Unlock automatically after N minutes.** This is a safety net, off by default.
 - **Show a message on lock, on unlock and when a locked device is used**, and how many seconds it stays (3 by default).

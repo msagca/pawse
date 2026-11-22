@@ -1,10 +1,11 @@
-#include <settings_dialog.hpp>
-#include <commctrl.h>
-#include <shellapi.h>
 #include <algorithm>
-#include <string>
 #include <app.hpp>
+#include <binding_box.hpp>
+#include <commctrl.h>
 #include <resource.hpp>
+#include <settings_dialog.hpp>
+#include <shellapi.h>
+#include <string>
 namespace pawse {
 namespace {
   constexpr int kBindingControlIds[kBindingCount] = {IDC_BINDING_KEYBOARD, IDC_BINDING_MOUSE, IDC_BINDING_BOTH};
@@ -17,7 +18,7 @@ namespace {
   }
   void ShowSettingsInControls(HWND dialog, const Settings &settings, bool start_with_windows) {
     for (size_t index = 0; index < kBindingCount; ++index) {
-      SendDlgItemMessageW(dialog, kBindingControlIds[index], HKM_SETHOTKEY, KeyBindingToHotkeyControlValue(settings.bindings[index]), 0);
+      SetBindingBoxValue(GetDlgItem(dialog, kBindingControlIds[index]), settings.bindings[index]);
     }
     CheckDlgButton(dialog, IDC_REQUIRE_HELLO, settings.require_windows_hello ? BST_CHECKED : BST_UNCHECKED);
     SetDlgItemInt(dialog, IDC_AUTO_UNLOCK, settings.auto_unlock_minutes, FALSE);
@@ -30,9 +31,7 @@ namespace {
   Settings ReadSettingsFromControls(HWND dialog) {
     Settings settings;
     for (size_t index = 0; index < kBindingCount; ++index) {
-      const auto value = static_cast<WORD>(
-        SendDlgItemMessageW(dialog, kBindingControlIds[index], HKM_GETHOTKEY, 0, 0));
-      settings.bindings[index] = KeyBindingFromHotkeyControlValue(value);
+      settings.bindings[index] = GetBindingBoxValue(GetDlgItem(dialog, kBindingControlIds[index]));
     }
     settings.require_windows_hello = IsDlgButtonChecked(dialog, IDC_REQUIRE_HELLO) == BST_CHECKED;
     BOOL is_number = FALSE;
@@ -103,10 +102,6 @@ namespace {
       app = reinterpret_cast<App *>(lparam);
       SetWindowLongPtrW(dialog, DWLP_USER, lparam);
       app->SetSettingsDialog(dialog);
-      for (const int control_id : kBindingControlIds) {
-        // Bindings without Ctrl or Alt are too easy to press by accident (or by paw).
-        SendDlgItemMessageW(dialog, control_id, HKM_SETRULES, HKCOMB_NONE | HKCOMB_S, MAKELPARAM(HOTKEYF_CONTROL | HOTKEYF_ALT, 0));
-      }
       SendDlgItemMessageW(dialog, IDC_AUTO_UNLOCK_SPIN, UDM_SETRANGE32, 0, kMaxAutoUnlockMinutes);
       SendDlgItemMessageW(dialog, IDC_MESSAGE_SECONDS_SPIN, UDM_SETRANGE32, kMinMessageSeconds, kMaxMessageSeconds);
       ShowSettingsInControls(dialog, app->GetSettings(), IsStartWithWindowsEnabled());

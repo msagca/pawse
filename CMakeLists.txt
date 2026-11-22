@@ -18,6 +18,7 @@ add_executable(
     WIN32
     src/app.cpp
     src/banner.cpp
+    src/binding_box.cpp
     src/hello_verifier.cpp
     src/input_blocker.cpp
     src/key_binding.cpp
