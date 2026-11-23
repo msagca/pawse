@@ -35,7 +35,7 @@ Pawse must never trap the user. The mouse can be locked only while a binding can
 
 ## Where to add
 
-- **A setting:** the `Settings` struct in `include/settings.hpp`, `LoadSettings` and `SaveSettings` in `settings.cpp`, a control in `IDD_SETTINGS` with its id in `resources/resource.hpp`, and `ShowSettingsInControls` and `ReadSettingsFromControls` in `settings_dialog.cpp`. Then describe it in `docs/README.md#settings`.
+- **A setting:** the `Settings` struct in `include/settings.hpp`, `LoadSettings` and `SaveSettings` in `settings.cpp`, a control in `IDD_SETTINGS` with its id in `resources/resource.hpp` (end it within 20 DLU of the right edge to stretch with the window, see [README.md](README.md#how-it-works)), and `ShowSettingsInControls` and `ReadSettingsFromControls` in `settings_dialog.cpp`. Then describe it in `docs/README.md#settings`.
 - **A tray menu item:** `MenuCommand`, `App::ShowTrayMenu` and `App::HandleCommand` in `app.cpp`.
 - **A message from another thread:** a `kMessage*` constant in `include/common.hpp` and a case in `App::HandleMessage`.
 - **Lock and unlock text:** `App::ShowLockedMessage`, `App::FlashUnlockedMessage` and `App::DescribeUnlock`.
