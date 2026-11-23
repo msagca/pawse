@@ -103,6 +103,7 @@ namespace {
     HWND control;
     RECT rect;
     Anchor anchor;
+    LONG max_width; // in the same pixels as `rect`, 0 for no limit
   };
   // The layout from IDD_SETTINGS, in client pixels at `dpi`. The window can't get smaller than it.
   struct DialogLayout {
@@ -122,6 +123,8 @@ namespace {
   RememberedSize g_remembered_size;
   // Controls that end within this many dialog units of the right edge stretch with the window.
   constexpr int kStretchMarginDlu = 20;
+  // Key binding boxes stop stretching at this width in dialog units.
+  constexpr int kBindingBoxMaxWidthDlu = 200;
   // Posted to the dialog itself after a DPI change, once Windows has rescaled the controls.
   constexpr UINT kMessageRelayout = WM_APP + 100;
   Anchor ChooseAnchor(HWND dialog, int id, const RECT &rect, LONG client_width) {
@@ -145,13 +148,19 @@ namespace {
     RECT client{};
     GetClientRect(dialog, &client);
     layout.client = {client.right, client.bottom};
+    RECT binding_box_max{0, 0, kBindingBoxMaxWidthDlu, 0};
+    MapDialogRect(dialog, &binding_box_max);
     for (HWND control = GetWindow(dialog, GW_CHILD); control != nullptr;
       control = GetWindow(control, GW_HWNDNEXT)) {
       RECT rect{};
       GetWindowRect(control, &rect);
       MapWindowPoints(nullptr, dialog, reinterpret_cast<POINT *>(&rect), 2);
-      layout.controls.push_back(
-        {control, rect, ChooseAnchor(dialog, GetDlgCtrlID(control), rect, layout.client.cx)});
+      const int id = GetDlgCtrlID(control);
+      const bool is_binding_box = std::ranges::find(kBindingControlIds, id) != std::end(kBindingControlIds);
+      layout.controls.push_back({control,
+        rect,
+        ChooseAnchor(dialog, id, rect, layout.client.cx),
+        is_binding_box ? binding_box_max.right : 0});
     }
     return layout;
   }
@@ -188,6 +197,9 @@ namespace {
       switch (item.anchor) {
       case Anchor::kStretch:
         rect.right += grow_x;
+        if (item.max_width > 0) {
+          rect.right = std::min(rect.right, rect.left + scale(item.max_width));
+        }
         break;
       case Anchor::kBottomLeft:
         OffsetRect(&rect, 0, grow_y);
